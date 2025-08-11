@@ -23417,17 +23417,18 @@ window.redirectToCurrentVariant = function() {
 </script> -->
 
 <script>
- // Product Variant Redirect Handler
-
-   // Product Variant Redirect Handler
+// Product Variant Redirect Handler
 class VariantRedirectHandler {
     constructor() {
         this.currentSize = '25CM'; // Default selected size
         this.currentColor = 'Brown'; // Default selected color
         this.basePrice = '£69.99'; // Consistent price for all variants
         
+        // Immediately hide all price elements to prevent flickering
+        this.hidePricesImmediately();
+        
         // Define redirect URLs for each variant combination
-        this.variantUrls = {
+         this.variantUrls = {
             // 25CM variants
             '25CM-Brown': 'https://n2kzpa-uw.myshopify.com/cart/52231896465741:1',
             '25CM-Black': 'https://n2kzpa-uw.myshopify.com/cart/52231896498509:1',
@@ -23476,13 +23477,38 @@ class VariantRedirectHandler {
             '40CM-Blue': 'https://n2kzpa-uw.myshopify.com/cart/52231897710925:1',
             '40CM-Red': 'https://n2kzpa-uw.myshopify.com/cart/52231897743693:1'
         };
+
+        
         this.init();
+    }
+    
+    hidePricesImmediately() {
+        // Add CSS to immediately hide price elements and prevent flickering
+        const style = document.createElement('style');
+        style.id = 'price-override-css';
+        style.textContent = `
+            .gp-price, .price, .product-price, .current-price, [data-price], .money, .amount,
+            #p-price-gvIuHbMrvP .gp-price {
+                visibility: hidden !important;
+            }
+            .price-ready .gp-price, .price-ready .price, .price-ready .product-price, 
+            .price-ready .current-price, .price-ready [data-price], .price-ready .money, 
+            .price-ready .amount, .price-ready #p-price-gvIuHbMrvP .gp-price {
+                visibility: visible !important;
+            }
+        `;
+        document.head.appendChild(style);
     }
     
     init() {
         this.setupEventListeners();
-        this.updatePrice();
+        this.setPricesImmediately();
         this.updateVariantDisplay();
+        
+        // Mark document as price-ready after initial setup
+        setTimeout(() => {
+            document.body.classList.add('price-ready');
+        }, 50);
     }
     
     setupEventListeners() {
@@ -23553,6 +23579,8 @@ class VariantRedirectHandler {
         
         // Update active states
         this.updateActiveStates();
+        
+        // No need to update price here as it's locked
     }
     
     updateActiveStates() {
@@ -23574,8 +23602,8 @@ class VariantRedirectHandler {
         }
     }
     
-    updatePrice() {
-        // Multiple selectors to find price elements
+    setPricesImmediately() {
+        // Get all possible price elements
         const priceSelectors = [
             '#p-price-gvIuHbMrvP .gp-price',
             '.gp-price',
@@ -23587,59 +23615,99 @@ class VariantRedirectHandler {
             '.amount'
         ];
         
-        let priceUpdated = false;
-        
+        // Set prices immediately and prevent any changes
         priceSelectors.forEach(selector => {
             const priceElements = document.querySelectorAll(selector);
             priceElements.forEach(element => {
-                if (element && element.textContent !== this.basePrice) {
+                if (element) {
+                    // Set the price immediately
                     element.textContent = this.basePrice;
-                    priceUpdated = true;
-                    console.log(`Price updated to ${this.basePrice} for element:`, selector);
+                    
+                    // Lock the price by overriding text content setters
+                    this.lockPriceElement(element);
                 }
             });
         });
         
-        // Force update the main price element from the HTML
-        const mainPriceElement = document.querySelector('#p-price-gvIuHbMrvP .gp-price');
-        if (mainPriceElement) {
-            mainPriceElement.textContent = this.basePrice;
-        }
-        
-        // Set up continuous price monitoring
-        this.startPriceMonitoring();
+        // Set up aggressive monitoring for new price elements
+        this.setupPriceProtection();
     }
     
-    startPriceMonitoring() {
-        // Monitor price changes every 500ms
-        if (this.priceMonitorInterval) {
-            clearInterval(this.priceMonitorInterval);
-        }
+    lockPriceElement(element) {
+        // Override textContent and innerHTML setters to prevent price changes
+        const originalTextContent = Object.getOwnPropertyDescriptor(Node.prototype, 'textContent');
+        const originalInnerHTML = Object.getOwnPropertyDescriptor(Element.prototype, 'innerHTML');
         
-        this.priceMonitorInterval = setInterval(() => {
-            this.forcePriceUpdate();
-        }, 500);
+        // Create custom setter that maintains our price
+        Object.defineProperty(element, 'textContent', {
+            set: () => {
+                // Ignore any attempts to change the text content
+                originalTextContent.set.call(element, this.basePrice);
+            },
+            get: () => this.basePrice,
+            configurable: true
+        });
+        
+        Object.defineProperty(element, 'innerHTML', {
+            set: () => {
+                // Ignore any attempts to change the inner HTML
+                originalInnerHTML.set.call(element, this.basePrice);
+            },
+            get: () => this.basePrice,
+            configurable: true
+        });
+        
+        // Set initial value
+        originalTextContent.set.call(element, this.basePrice);
     }
     
-    forcePriceUpdate() {
-        const priceSelectors = [
-            '#p-price-gvIuHbMrvP .gp-price',
-            '.gp-price',
-            '.price',
-            '.product-price',
-            '.current-price',
-            '[data-price]',
-            '.money',
-            '.amount'
-        ];
-        
-        priceSelectors.forEach(selector => {
-            const priceElements = document.querySelectorAll(selector);
-            priceElements.forEach(element => {
-                if (element && element.textContent.trim() !== this.basePrice) {
-                    element.textContent = this.basePrice;
+    setupPriceProtection() {
+        // Use MutationObserver to catch any new price elements or changes
+        const observer = new MutationObserver((mutations) => {
+            mutations.forEach((mutation) => {
+                // Handle newly added nodes
+                if (mutation.type === 'childList') {
+                    mutation.addedNodes.forEach((node) => {
+                        if (node.nodeType === 1) { // Element node
+                            // Check if the new node is a price element
+                            const priceSelectors = ['.gp-price', '.price', '.product-price', '.current-price', '[data-price]', '.money', '.amount'];
+                            priceSelectors.forEach(selector => {
+                                if (node.matches && node.matches(selector)) {
+                                    node.textContent = this.basePrice;
+                                    this.lockPriceElement(node);
+                                }
+                                // Check children
+                                const childPrices = node.querySelectorAll ? node.querySelectorAll(selector) : [];
+                                childPrices.forEach(child => {
+                                    child.textContent = this.basePrice;
+                                    this.lockPriceElement(child);
+                                });
+                            });
+                        }
+                    });
+                }
+                
+                // Handle text changes
+                if (mutation.type === 'characterData' || mutation.type === 'attributes') {
+                    const target = mutation.target;
+                    if (target.nodeType === 3) { // Text node
+                        const parent = target.parentNode;
+                        if (parent && (parent.classList.contains('gp-price') || 
+                                     parent.classList.contains('price') ||
+                                     parent.closest('.gp-price') ||
+                                     parent.closest('.price'))) {
+                            target.textContent = this.basePrice;
+                        }
+                    }
                 }
             });
+        });
+        
+        observer.observe(document.body, {
+            childList: true,
+            subtree: true,
+            characterData: true,
+            attributes: true
         });
     }
     
@@ -23704,12 +23772,36 @@ class VariantRedirectHandler {
     }
 }
 
+// Add CSS immediately to prevent price flickering
+(function() {
+    const style = document.createElement('style');
+    style.id = 'price-override-immediate';
+    style.textContent = `
+        .gp-price, .price, .product-price, .current-price, [data-price], .money, .amount,
+        #p-price-gvIuHbMrvP .gp-price {
+            opacity: 0 !important;
+            transition: none !important;
+        }
+        .price-locked .gp-price, .price-locked .price, .price-locked .product-price, 
+        .price-locked .current-price, .price-locked [data-price], .price-locked .money, 
+        .price-locked .amount, .price-locked #p-price-gvIuHbMrvP .gp-price {
+            opacity: 1 !important;
+        }
+    `;
+    document.head.appendChild(style);
+})();
+
 // Initialize the variant handler when DOM is loaded
 document.addEventListener('DOMContentLoaded', function() {
     const variantHandler = new VariantRedirectHandler();
     
     // Make it globally accessible for external use
     window.variantHandler = variantHandler;
+    
+    // Mark prices as locked after setup
+    setTimeout(() => {
+        document.body.classList.add('price-locked');
+    }, 100);
     
     // Function to override cart functionality
     function overrideCartButton(button) {
@@ -23853,6 +23945,12 @@ window.redirectToCurrentVariant = function() {
 </script>
 
 
+<script>
+
+  // Define redirect URLs for each variant combination
+       
+
+</script>
 
 
 </html>
