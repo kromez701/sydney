@@ -1050,7 +1050,7 @@ jdgm.loadJS(jdgm.CDN_HOST+"loader.js"))}))}(document);
 
 <height-observer variable="header">
   <x-header  class="header color-scheme color-scheme--scheme-2">
-      <a href="/" class="header__logo"><span class="sr-only">Kyromart</span><img src="ruk_logo.png" alt="Kyromart" width="1000" height="196" sizes="250px" class="header__logo-image"></a>
+      <a href="/" class="header__logo"><span class="sr-only">Kyromart</span><img src="/cart/ruk_logo.png" alt="Kyromart" width="1000" height="196" sizes="250px" class="header__logo-image"></a>
     
 <template id="header-sidebar-template">
   <div part="base">
@@ -23942,12 +23942,8 @@ window.redirectToCurrentVariant = function() {
         window.variantHandler.redirectToVariantPage();
     }
 };
-</script>
 
-
-<script>
-
-  // Mobile Add to Bag Button Fix
+// Mobile Add to Bag Button Fix
 // Ensures the "ADD TO BAG" button stays active on mobile devices
 
 (function() {
@@ -23983,25 +23979,72 @@ window.redirectToCurrentVariant = function() {
             outOfStockContainer.classList.add('!gp-hidden');
             outOfStockContainer.style.display = 'none';
             
-            // Ensure the ADD TO BAG button is enabled
-            addToBagButton.disabled = false;
+            // Only modify visual state, preserve functionality
             addToBagButton.classList.remove('gp-cursor-default', 'gp-opacity-30', 'btn-disabled');
-            addToBagButton.removeAttribute('data-state');
             
-            // Update the gp-product-button data to indicate it's available
-            const gpData = JSON.parse(productButton.getAttribute('gp-data') || '{}');
-            if (gpData.disabled) {
-                gpData.disabled = "false";
-                productButton.setAttribute('gp-data', JSON.stringify(gpData));
+            // Don't modify disabled state or data attributes that might affect functionality
+            // The button's click handlers and form submission should work normally
+            
+            // If the button is truly disabled due to variant selection, make it functional
+            if (addToBagButton.disabled) {
+                addToBagButton.disabled = false;
             }
         }
     }
     
-    // Override the variant selection functionality on mobile
-    function overrideVariantSelection() {
+    // Ensure proper variant selection on mobile
+    function ensureVariantSelection() {
         if (!isMobileDevice()) return;
         
-        // Watch for changes to the gp-product-button element
+        const productButton = document.querySelector('gp-product-button');
+        const addToBagButton = productButton?.querySelector('button[aria-label="ADD TO BAG"]');
+        
+        if (!addToBagButton) return;
+        
+        // Add click handler to ensure variant data is properly set
+        addToBagButton.addEventListener('click', function(e) {
+            // Check if a variant is selected
+            const gpData = JSON.parse(productButton.getAttribute('gp-data') || '{}');
+            const variantID = gpData.variantID;
+            
+            // If no variant selected, try to find and select the first available variant
+            if (!variantID || variantID === '') {
+                const variantSelectors = document.querySelectorAll('[name*="variant"], [data-variant], .variant-selector input, .variant-selector select');
+                
+                if (variantSelectors.length > 0) {
+                    // Try to auto-select first available variant
+                    for (let selector of variantSelectors) {
+                        if (selector.type === 'radio' && !selector.disabled) {
+                            selector.checked = true;
+                            selector.dispatchEvent(new Event('change', { bubbles: true }));
+                            break;
+                        } else if (selector.tagName === 'SELECT' && selector.options.length > 1) {
+                            selector.selectedIndex = 1; // Skip the first "Select" option
+                            selector.dispatchEvent(new Event('change', { bubbles: true }));
+                            break;
+                        }
+                    }
+                    
+                    // Give a moment for the variant selection to process
+                    setTimeout(() => {
+                        // Re-trigger the click after variant is selected
+                        addToBagButton.click();
+                    }, 100);
+                    
+                    e.preventDefault();
+                    return false;
+                }
+            }
+            
+            // If we reach here, let the normal click proceed
+        }, true); // Use capture to run before other handlers
+    }
+    // Watch for DOM changes and maintain button visibility
+    function watchForChanges() {
+    // Watch for DOM changes and maintain button visibility
+    function watchForChanges() {
+        if (!isMobileDevice()) return;
+        
         const productButton = document.querySelector('gp-product-button');
         if (!productButton) return;
         
@@ -24105,9 +24148,10 @@ window.redirectToCurrentVariant = function() {
     function init() {
         // Initial setup
         forceShowAddToBag();
+        ensureVariantSelection();
         
         // Set up ongoing monitoring
-        overrideVariantSelection();
+        watchForChanges();
         interceptAjaxCalls();
         handleFormSubmissions();
         
@@ -24140,8 +24184,12 @@ window.redirectToCurrentVariant = function() {
     setTimeout(init, 500);
     
 })();
-       
+</script>
 
+
+<script>
+
+  
 </script>
 
 
