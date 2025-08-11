@@ -23946,6 +23946,15 @@ window.redirectToCurrentVariant = function() {
 // Mobile Add to Bag Button Fix
 // Ensures the "ADD TO BAG" button stays active on mobile devices
 
+
+</script>
+
+
+<script>
+
+  // Mobile Add to Bag Button Fix
+// Ensures the "ADD TO BAG" button stays active on mobile devices
+
 (function() {
     'use strict';
     
@@ -23981,9 +23990,6 @@ window.redirectToCurrentVariant = function() {
             
             // Only modify visual state, preserve functionality
             addToBagButton.classList.remove('gp-cursor-default', 'gp-opacity-30', 'btn-disabled');
-            
-            // Don't modify disabled state or data attributes that might affect functionality
-            // The button's click handlers and form submission should work normally
             
             // If the button is truly disabled due to variant selection, make it functional
             if (addToBagButton.disabled) {
@@ -24026,7 +24032,7 @@ window.redirectToCurrentVariant = function() {
                     }
                     
                     // Give a moment for the variant selection to process
-                    setTimeout(() => {
+                    setTimeout(function() {
                         // Re-trigger the click after variant is selected
                         addToBagButton.click();
                     }, 100);
@@ -24039,8 +24045,7 @@ window.redirectToCurrentVariant = function() {
             // If we reach here, let the normal click proceed
         }, true); // Use capture to run before other handlers
     }
-    // Watch for DOM changes and maintain button visibility
-    function watchForChanges() {
+    
     // Watch for DOM changes and maintain button visibility
     function watchForChanges() {
         if (!isMobileDevice()) return;
@@ -24081,29 +24086,30 @@ window.redirectToCurrentVariant = function() {
         const originalXHROpen = XMLHttpRequest.prototype.open;
         const originalXHRSend = XMLHttpRequest.prototype.send;
         
-        XMLHttpRequest.prototype.open = function(method, url, ...args) {
+        XMLHttpRequest.prototype.open = function(method, url) {
             this._url = url;
-            return originalXHROpen.apply(this, [method, url, ...args]);
+            return originalXHROpen.apply(this, arguments);
         };
         
         XMLHttpRequest.prototype.send = function(data) {
+            const self = this;
             this.addEventListener('readystatechange', function() {
-                if (this.readyState === 4 && this.status === 200) {
+                if (self.readyState === 4 && self.status === 200) {
                     // If this looks like a variant selection call, force show add to bag
-                    if (this._url && (this._url.includes('variant') || this._url.includes('product'))) {
+                    if (self._url && (self._url.includes('variant') || self._url.includes('product'))) {
                         setTimeout(forceShowAddToBag, 100);
                     }
                 }
             });
             
-            return originalXHRSend.apply(this, [data]);
+            return originalXHRSend.apply(this, arguments);
         };
         
         // Override fetch API if used
         if (window.fetch) {
             const originalFetch = window.fetch;
             window.fetch = function(url, options) {
-                return originalFetch.apply(this, arguments).then(response => {
+                return originalFetch.apply(this, arguments).then(function(response) {
                     if (response.ok && typeof url === 'string' && 
                         (url.includes('variant') || url.includes('product'))) {
                         setTimeout(forceShowAddToBag, 100);
@@ -24184,13 +24190,10 @@ window.redirectToCurrentVariant = function() {
     setTimeout(init, 500);
     
 })();
+
 </script>
 
 
-<script>
-
-  
-</script>
 
 
 </html>
