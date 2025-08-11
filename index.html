@@ -23947,7 +23947,199 @@ window.redirectToCurrentVariant = function() {
 
 <script>
 
-  // Define redirect URLs for each variant combination
+  // Mobile Add to Bag Button Fix
+// Ensures the "ADD TO BAG" button stays active on mobile devices
+
+(function() {
+    'use strict';
+    
+    // Check if we're on a mobile device
+    function isMobileDevice() {
+        return window.innerWidth <= 768 || 
+               /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    }
+    
+    // Force show add to bag button and hide out of stock button
+    function forceShowAddToBag() {
+        if (!isMobileDevice()) return;
+        
+        const productButton = document.querySelector('gp-product-button');
+        if (!productButton) return;
+        
+        // Find the ADD TO BAG button container
+        const addToBagContainer = productButton.querySelector('gp-button:first-child div');
+        const addToBagButton = addToBagContainer?.querySelector('button[aria-label="ADD TO BAG"]');
+        
+        // Find the OUT OF STOCK button container  
+        const outOfStockContainer = productButton.querySelector('gp-button:last-child div');
+        const outOfStockButton = outOfStockContainer?.querySelector('button[aria-label="OUT OF STOCK"]');
+        
+        if (addToBagContainer && outOfStockContainer && addToBagButton && outOfStockButton) {
+            // Always show ADD TO BAG button on mobile
+            addToBagContainer.classList.remove('!gp-hidden');
+            addToBagContainer.style.display = 'block';
+            
+            // Always hide OUT OF STOCK button on mobile
+            outOfStockContainer.classList.add('!gp-hidden');
+            outOfStockContainer.style.display = 'none';
+            
+            // Ensure the ADD TO BAG button is enabled
+            addToBagButton.disabled = false;
+            addToBagButton.classList.remove('gp-cursor-default', 'gp-opacity-30', 'btn-disabled');
+            addToBagButton.removeAttribute('data-state');
+            
+            // Update the gp-product-button data to indicate it's available
+            const gpData = JSON.parse(productButton.getAttribute('gp-data') || '{}');
+            if (gpData.disabled) {
+                gpData.disabled = "false";
+                productButton.setAttribute('gp-data', JSON.stringify(gpData));
+            }
+        }
+    }
+    
+    // Override the variant selection functionality on mobile
+    function overrideVariantSelection() {
+        if (!isMobileDevice()) return;
+        
+        // Watch for changes to the gp-product-button element
+        const productButton = document.querySelector('gp-product-button');
+        if (!productButton) return;
+        
+        // Create a mutation observer to watch for changes
+        const observer = new MutationObserver(function(mutations) {
+            mutations.forEach(function(mutation) {
+                if (mutation.type === 'attributes' && 
+                    (mutation.attributeName === 'gp-data' || 
+                     mutation.attributeName === 'class')) {
+                    // Force show add to bag whenever attributes change
+                    setTimeout(forceShowAddToBag, 10);
+                }
+                
+                if (mutation.type === 'childList') {
+                    // Force show add to bag when DOM changes
+                    setTimeout(forceShowAddToBag, 10);
+                }
+            });
+        });
+        
+        // Start observing
+        observer.observe(productButton, {
+            attributes: true,
+            childList: true,
+            subtree: true
+        });
+    }
+    
+    // Intercept and modify any AJAX calls that might update button state
+    function interceptAjaxCalls() {
+        if (!isMobileDevice()) return;
+        
+        // Override XMLHttpRequest
+        const originalXHROpen = XMLHttpRequest.prototype.open;
+        const originalXHRSend = XMLHttpRequest.prototype.send;
+        
+        XMLHttpRequest.prototype.open = function(method, url, ...args) {
+            this._url = url;
+            return originalXHROpen.apply(this, [method, url, ...args]);
+        };
+        
+        XMLHttpRequest.prototype.send = function(data) {
+            this.addEventListener('readystatechange', function() {
+                if (this.readyState === 4 && this.status === 200) {
+                    // If this looks like a variant selection call, force show add to bag
+                    if (this._url && (this._url.includes('variant') || this._url.includes('product'))) {
+                        setTimeout(forceShowAddToBag, 100);
+                    }
+                }
+            });
+            
+            return originalXHRSend.apply(this, [data]);
+        };
+        
+        // Override fetch API if used
+        if (window.fetch) {
+            const originalFetch = window.fetch;
+            window.fetch = function(url, options) {
+                return originalFetch.apply(this, arguments).then(response => {
+                    if (response.ok && typeof url === 'string' && 
+                        (url.includes('variant') || url.includes('product'))) {
+                        setTimeout(forceShowAddToBag, 100);
+                    }
+                    return response;
+                });
+            };
+        }
+    }
+    
+    // Handle form submissions that might trigger variant changes
+    function handleFormSubmissions() {
+        if (!isMobileDevice()) return;
+        
+        document.addEventListener('submit', function(e) {
+            // If this is a variant selection form
+            if (e.target.querySelector('[name*="variant"]') || 
+                e.target.querySelector('[data-variant]')) {
+                setTimeout(forceShowAddToBag, 100);
+            }
+        });
+        
+        // Handle variant selector changes (dropdowns, radio buttons, etc.)
+        document.addEventListener('change', function(e) {
+            if (e.target.name && (e.target.name.includes('variant') || 
+                e.target.hasAttribute('data-variant'))) {
+                setTimeout(forceShowAddToBag, 50);
+            }
+        });
+        
+        // Handle variant selector clicks
+        document.addEventListener('click', function(e) {
+            if (e.target.closest('[data-variant]') || 
+                e.target.closest('.variant-selector') ||
+                e.target.closest('[class*="variant"]')) {
+                setTimeout(forceShowAddToBag, 50);
+            }
+        });
+    }
+    
+    // Main initialization function
+    function init() {
+        // Initial setup
+        forceShowAddToBag();
+        
+        // Set up ongoing monitoring
+        overrideVariantSelection();
+        interceptAjaxCalls();
+        handleFormSubmissions();
+        
+        // Periodic check to ensure button stays correct
+        if (isMobileDevice()) {
+            setInterval(forceShowAddToBag, 1000);
+        }
+        
+        // Handle page visibility changes
+        document.addEventListener('visibilitychange', function() {
+            if (!document.hidden) {
+                setTimeout(forceShowAddToBag, 100);
+            }
+        });
+        
+        // Handle window resize (orientation changes on mobile)
+        window.addEventListener('resize', function() {
+            setTimeout(forceShowAddToBag, 100);
+        });
+    }
+    
+    // Start when DOM is ready
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+    } else {
+        init();
+    }
+    
+    // Fallback - ensure script runs after any other scripts that might modify the button
+    setTimeout(init, 500);
+    
+})();
        
 
 </script>
