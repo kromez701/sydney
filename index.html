@@ -24069,8 +24069,14 @@ window.redirectToCurrentVariant = function() {
             // addToBagContainer.style.display = 'block';
             
             // Always hide OUT OF STOCK button on mobile
-            outOfStockContainer.classList.add('!gp-hidden');
-            outOfStockContainer.style.display = 'none';
+           
+            outOfStockButton.textContent = "ADD TO BAG"
+             console.log("out of stock;",outOfStockButton.textContent)
+
+             console.log("out of stock;",outOfStockContainer.classList)
+            
+            outOfStockContainer.classList.remove('!gp-hidden');
+            outOfStockContainer.style.display = 'block';
             
         //     // Only modify visual state, preserve functionality
         //     addToBagButton.classList.remove('gp-cursor-default', 'gp-opacity-30', 'btn-disabled');
