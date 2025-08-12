@@ -24052,25 +24052,25 @@ window.redirectToCurrentVariant = function() {
     function forceShowAddToBag() {
         // if (!isMobileDevice()) return;
         
-        // const productButton = document.querySelector('gp-product-button');
-        // if (!productButton) return;
+        const productButton = document.querySelector('gp-product-button');
+        if (!productButton) return;
         
         // // Find the ADD TO BAG button container
-        // const addToBagContainer = productButton.querySelector('gp-button:first-child div');
-        // const addToBagButton = addToBagContainer?.querySelector('button[aria-label="ADD TO BAG"]');
+        const addToBagContainer = productButton.querySelector('gp-button:first-child div');
+        const addToBagButton = addToBagContainer?.querySelector('button[aria-label="ADD TO BAG"]');
         
         // // Find the OUT OF STOCK button container  
-        // const outOfStockContainer = productButton.querySelector('gp-button:last-child div');
-        // const outOfStockButton = outOfStockContainer?.querySelector('button[aria-label="OUT OF STOCK"]');
+        const outOfStockContainer = productButton.querySelector('gp-button:last-child div');
+        const outOfStockButton = outOfStockContainer?.querySelector('button[aria-label="OUT OF STOCK"]');
         
-        // if (addToBagContainer && outOfStockContainer && addToBagButton && outOfStockButton) {
-        //     // Always show ADD TO BAG button on mobile
-        //     addToBagContainer.classList.remove('!gp-hidden');
-        //     addToBagContainer.style.display = 'block';
+        if (addToBagContainer && outOfStockContainer && addToBagButton && outOfStockButton) {
+            // Always show ADD TO BAG button on mobile
+            // addToBagContainer.classList.remove('!gp-hidden');
+            // addToBagContainer.style.display = 'block';
             
-        //     // Always hide OUT OF STOCK button on mobile
-        //     outOfStockContainer.classList.add('!gp-hidden');
-        //     outOfStockContainer.style.display = 'none';
+            // Always hide OUT OF STOCK button on mobile
+            outOfStockContainer.classList.add('!gp-hidden');
+            outOfStockContainer.style.display = 'none';
             
         //     // Only modify visual state, preserve functionality
         //     addToBagButton.classList.remove('gp-cursor-default', 'gp-opacity-30', 'btn-disabled');
@@ -24079,7 +24079,7 @@ window.redirectToCurrentVariant = function() {
         //     if (addToBagButton.disabled) {
         //         addToBagButton.disabled = false;
         //     }
-        // }
+        }
     }
     
     // Ensure proper variant selection on mobile
