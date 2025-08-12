@@ -23839,12 +23839,12 @@ window.redirectToCurrentVariant = function() {
         window.variantHandler.redirectToVariantPage();
     }
 };
-</script>
 
 
-<script>
 
-  // Mobile Add to Bag Button Fix
+//Mobile
+
+// Mobile Add to Bag Button Fix
 // Ensures the "ADD TO BAG" button stays active on mobile devices
 
 (function() {
@@ -23855,9 +23855,6 @@ window.redirectToCurrentVariant = function() {
         return window.innerWidth <= 768 || 
                /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
     }
-    
-    // Track if we're already processing a click to prevent loops
-    let isProcessingClick = false;
     
     // Force show add to bag button and hide out of stock button
     function forceShowAddToBag() {
@@ -23893,218 +23890,184 @@ window.redirectToCurrentVariant = function() {
         }
     }
     
-    // Simplified variant selection that doesn't interfere with normal flow
+    // Ensure proper variant selection on mobile
     function ensureVariantSelection() {
         if (!isMobileDevice()) return;
         
         const productButton = document.querySelector('gp-product-button');
         const addToBagButton = productButton?.querySelector('button[aria-label="ADD TO BAG"]');
         
-        if (!addToBagButton || addToBagButton.hasAttribute('data-click-handler-added')) return;
+        if (!addToBagButton) return;
         
-        // Mark that we've added our handler to prevent duplicates
-        addToBagButton.setAttribute('data-click-handler-added', 'true');
-        
-        // Add click handler with minimal interference
+        // Add click handler to ensure variant data is properly set
         addToBagButton.addEventListener('click', function(e) {
-            // Prevent multiple simultaneous processing
-            if (isProcessingClick) {
-                e.preventDefault();
-                return false;
-            }
-            
             // Check if a variant is selected
             const gpData = JSON.parse(productButton.getAttribute('gp-data') || '{}');
             const variantID = gpData.variantID;
             
-            // Only intervene if no variant is selected
+            // If no variant selected, try to find and select the first available variant
             if (!variantID || variantID === '') {
-                isProcessingClick = true;
+                const variantSelectors = document.querySelectorAll('[name*="variant"], [data-variant], .variant-selector input, .variant-selector select');
                 
-                // Try to auto-select first available variant quickly
-                const variantSelectors = document.querySelectorAll('[name*="variant"]:not([disabled]), [data-variant]:not([disabled]), .variant-selector input:not([disabled]), .variant-selector select:not([disabled])');
-                
-                let variantSelected = false;
-                
-                for (let selector of variantSelectors) {
-                    if (selector.type === 'radio' && !selector.checked) {
-                        selector.checked = true;
-                        selector.dispatchEvent(new Event('change', { bubbles: true }));
-                        variantSelected = true;
-                        break;
-                    } else if (selector.tagName === 'SELECT' && selector.selectedIndex <= 0) {
-                        for (let i = 1; i < selector.options.length; i++) {
-                            if (!selector.options[i].disabled) {
-                                selector.selectedIndex = i;
-                                selector.dispatchEvent(new Event('change', { bubbles: true }));
-                                variantSelected = true;
-                                break;
-                            }
+                if (variantSelectors.length > 0) {
+                    // Try to auto-select first available variant
+                    for (let selector of variantSelectors) {
+                        if (selector.type === 'radio' && !selector.disabled) {
+                            selector.checked = true;
+                            selector.dispatchEvent(new Event('change', { bubbles: true }));
+                            break;
+                        } else if (selector.tagName === 'SELECT' && selector.options.length > 1) {
+                            selector.selectedIndex = 1; // Skip the first "Select" option
+                            selector.dispatchEvent(new Event('change', { bubbles: true }));
+                            break;
                         }
-                        if (variantSelected) break;
                     }
-                }
-                
-                if (variantSelected) {
-                    // Prevent the original click and retry after a short delay
-                    e.preventDefault();
-                    e.stopPropagation();
                     
-                    // Much shorter timeout - just enough for variant data to update
+                    // Give a moment for the variant selection to process
                     setTimeout(function() {
-                        isProcessingClick = false;
-                        // Trigger a new click event instead of calling click() to avoid recursion
-                        const newEvent = new MouseEvent('click', {
-                            bubbles: true,
-                            cancelable: true,
-                            view: window
-                        });
-                        addToBagButton.dispatchEvent(newEvent);
-                    }, 50); // Reduced from 100ms to 50ms
+                        // Re-trigger the click after variant is selected
+                        addToBagButton.click();
+                    }, 100);
                     
+                    e.preventDefault();
                     return false;
                 }
-                
-                isProcessingClick = false;
             }
             
-            // If we reach here, let the normal click proceed without interference
-        }, true); // Use capture phase but with minimal intervention
+            // If we reach here, let the normal click proceed
+        }, true); // Use capture to run before other handlers
     }
     
-    // Simplified change watching with debouncing
-    let changeTimeout;
+    // Watch for DOM changes and maintain button visibility
     function watchForChanges() {
         if (!isMobileDevice()) return;
         
         const productButton = document.querySelector('gp-product-button');
-        if (!productButton || productButton.hasAttribute('data-observer-added')) return;
+        if (!productButton) return;
         
-        productButton.setAttribute('data-observer-added', 'true');
-        
-        // Debounced function to prevent excessive calls
-        function debouncedForceShow() {
-            clearTimeout(changeTimeout);
-            changeTimeout = setTimeout(forceShowAddToBag, 25); // Reduced delay
-        }
-        
-        // Create a mutation observer with less intensive monitoring
+        // Create a mutation observer to watch for changes
         const observer = new MutationObserver(function(mutations) {
-            let shouldUpdate = false;
-            
             mutations.forEach(function(mutation) {
                 if (mutation.type === 'attributes' && 
-                    mutation.attributeName === 'gp-data') {
-                    shouldUpdate = true;
-                } else if (mutation.type === 'childList' && 
-                           mutation.target.querySelector('button[aria-label*="BAG"], button[aria-label*="STOCK"]')) {
-                    shouldUpdate = true;
+                    (mutation.attributeName === 'gp-data' || 
+                     mutation.attributeName === 'class')) {
+                    // Force show add to bag whenever attributes change
+                    setTimeout(forceShowAddToBag, 10);
+                }
+                
+                if (mutation.type === 'childList') {
+                    // Force show add to bag when DOM changes
+                    setTimeout(forceShowAddToBag, 10);
                 }
             });
-            
-            if (shouldUpdate) {
-                debouncedForceShow();
-            }
         });
         
-        // More targeted observation
+        // Start observing
         observer.observe(productButton, {
             attributes: true,
-            attributeFilter: ['gp-data', 'class'],
             childList: true,
             subtree: true
         });
     }
     
-    // Simplified AJAX interception - only for critical calls
+    // Intercept and modify any AJAX calls that might update button state
     function interceptAjaxCalls() {
-        if (!isMobileDevice() || window.ajaxInterceptorAdded) return;
-        window.ajaxInterceptorAdded = true;
+        if (!isMobileDevice()) return;
         
-        // Debounced update function
-        let ajaxTimeout;
-        function debouncedAjaxUpdate() {
-            clearTimeout(ajaxTimeout);
-            ajaxTimeout = setTimeout(forceShowAddToBag, 100);
-        }
+        // Override XMLHttpRequest
+        const originalXHROpen = XMLHttpRequest.prototype.open;
+        const originalXHRSend = XMLHttpRequest.prototype.send;
         
-        // Simplified fetch override
+        XMLHttpRequest.prototype.open = function(method, url) {
+            this._url = url;
+            return originalXHROpen.apply(this, arguments);
+        };
+        
+        XMLHttpRequest.prototype.send = function(data) {
+            const self = this;
+            this.addEventListener('readystatechange', function() {
+                if (self.readyState === 4 && self.status === 200) {
+                    // If this looks like a variant selection call, force show add to bag
+                    if (self._url && (self._url.includes('variant') || self._url.includes('product'))) {
+                        setTimeout(forceShowAddToBag, 100);
+                    }
+                }
+            });
+            
+            return originalXHRSend.apply(this, arguments);
+        };
+        
+        // Override fetch API if used
         if (window.fetch) {
             const originalFetch = window.fetch;
             window.fetch = function(url, options) {
-                const promise = originalFetch.apply(this, arguments);
-                
-                // Only monitor specific endpoints
-                if (typeof url === 'string' && 
-                    (url.includes('/products/') || url.includes('variant') || url.includes('inventory'))) {
-                    promise.then(function(response) {
-                        if (response.ok) {
-                            debouncedAjaxUpdate();
-                        }
-                        return response;
-                    }).catch(function(error) {
-                        return Promise.reject(error);
-                    });
-                }
-                
-                return promise;
+                return originalFetch.apply(this, arguments).then(function(response) {
+                    if (response.ok && typeof url === 'string' && 
+                        (url.includes('variant') || url.includes('product'))) {
+                        setTimeout(forceShowAddToBag, 100);
+                    }
+                    return response;
+                });
             };
         }
     }
     
-    // Simplified form handling with debouncing
-    let formTimeout;
+    // Handle form submissions that might trigger variant changes
     function handleFormSubmissions() {
-        if (!isMobileDevice() || window.formHandlerAdded) return;
-        window.formHandlerAdded = true;
+        if (!isMobileDevice()) return;
         
-        function debouncedFormUpdate() {
-            clearTimeout(formTimeout);
-            formTimeout = setTimeout(forceShowAddToBag, 25);
-        }
-        
-        // Handle variant selector changes only
-        document.addEventListener('change', function(e) {
-            if ((e.target.name && e.target.name.includes('variant')) || 
-                e.target.hasAttribute('data-variant') ||
-                e.target.closest('.variant-selector')) {
-                debouncedFormUpdate();
+        document.addEventListener('submit', function(e) {
+            // If this is a variant selection form
+            if (e.target.querySelector('[name*="variant"]') || 
+                e.target.querySelector('[data-variant]')) {
+                setTimeout(forceShowAddToBag, 100);
             }
-        }, { passive: true });
+        });
+        
+        // Handle variant selector changes (dropdowns, radio buttons, etc.)
+        document.addEventListener('change', function(e) {
+            if (e.target.name && (e.target.name.includes('variant') || 
+                e.target.hasAttribute('data-variant'))) {
+                setTimeout(forceShowAddToBag, 50);
+            }
+        });
+        
+        // Handle variant selector clicks
+        document.addEventListener('click', function(e) {
+            if (e.target.closest('[data-variant]') || 
+                e.target.closest('.variant-selector') ||
+                e.target.closest('[class*="variant"]')) {
+                setTimeout(forceShowAddToBag, 50);
+            }
+        });
     }
     
     // Main initialization function
     function init() {
-        if (!isMobileDevice()) return;
-        
         // Initial setup
         forceShowAddToBag();
         ensureVariantSelection();
         
-        // Set up monitoring with reduced frequency
+        // Set up ongoing monitoring
         watchForChanges();
         interceptAjaxCalls();
         handleFormSubmissions();
         
-        // Less frequent periodic check
-        const periodicCheck = setInterval(function() {
-            // Only check if page is visible
-            if (!document.hidden) {
-                forceShowAddToBag();
-            }
-        }, 2000); // Reduced from 1000ms to 2000ms
+        // Periodic check to ensure button stays correct
+        if (isMobileDevice()) {
+            setInterval(forceShowAddToBag, 1000);
+        }
         
-        // Clean up interval when page is hidden for too long
-        let hiddenTimeout;
+        // Handle page visibility changes
         document.addEventListener('visibilitychange', function() {
-            if (document.hidden) {
-                hiddenTimeout = setTimeout(function() {
-                    clearInterval(periodicCheck);
-                }, 30000); // Stop checking after 30 seconds of being hidden
-            } else {
-                clearTimeout(hiddenTimeout);
-                setTimeout(forceShowAddToBag, 50);
+            if (!document.hidden) {
+                setTimeout(forceShowAddToBag, 100);
             }
+        });
+        
+        // Handle window resize (orientation changes on mobile)
+        window.addEventListener('resize', function() {
+            setTimeout(forceShowAddToBag, 100);
         });
     }
     
@@ -24115,12 +24078,20 @@ window.redirectToCurrentVariant = function() {
         init();
     }
     
+    // Fallback - ensure script runs after any other scripts that might modify the button
+    setTimeout(init, 500);
+    
 })();
+
+
 </script>
 
 
 
-<script>
+
+
+
+<!-- <script>
 
 // Define redirect URLs for each variant combination
          this.variantUrls = {
@@ -24175,7 +24146,7 @@ window.redirectToCurrentVariant = function() {
 
         
 
-</script>
+</script> -->
 
 
 </html>
