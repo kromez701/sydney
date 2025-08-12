@@ -23416,6 +23416,166 @@ window.redirectToCurrentVariant = function() {
 
 </script> -->
 
+// Immediate price override - runs before DOM is fully loaded
+(function() {
+    'use strict';
+    
+    const FIXED_PRICE = '£69.99';
+    
+    // Inject critical CSS immediately to prevent any price visibility
+    const criticalCSS = `
+        <style id="price-override-critical">
+            /* Hide ALL possible price elements immediately */
+            .gp-price, .price, .product-price, .current-price, [data-price], 
+            .money, .amount, .sale-price, .regular-price, .price-item,
+            #p-price-gvIuHbMrvP .gp-price, [class*="price"], [id*="price"],
+            .price-container, .price-wrapper, .product-price-container,
+            .variant-price, .current-variant-price {
+                visibility: hidden !important;
+                opacity: 0 !important;
+                color: transparent !important;
+            }
+            
+            /* Only show prices when we're ready */
+            .price-override-ready .gp-price,
+            .price-override-ready .price,
+            .price-override-ready .product-price,
+            .price-override-ready .current-price,
+            .price-override-ready [data-price],
+            .price-override-ready .money,
+            .price-override-ready .amount,
+            .price-override-ready #p-price-gvIuHbMrvP .gp-price,
+            .price-override-ready [class*="price"],
+            .price-override-ready [id*="price"] {
+                visibility: visible !important;
+                opacity: 1 !important;
+                color: inherit !important;
+            }
+            
+            /* Ensure our price content is set */
+            .price-override-ready .gp-price::before,
+            .price-override-ready .price::before,
+            .price-override-ready .product-price::before,
+            .price-override-ready .current-price::before,
+            .price-override-ready [data-price]::before,
+            .price-override-ready .money::before,
+            .price-override-ready .amount::before {
+                content: "${FIXED_PRICE}" !important;
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: inherit;
+                z-index: 1;
+            }
+        </style>
+    `;
+    
+    // Insert CSS immediately - even before DOMContentLoaded
+    if (document.head) {
+        document.head.insertAdjacentHTML('afterbegin', criticalCSS);
+    } else {
+        // If head doesn't exist yet, create it
+        document.documentElement.insertAdjacentHTML('afterbegin', '<head>' + criticalCSS + '</head>');
+    }
+    
+    // Aggressive price replacement function
+    function replacePricesAggressively() {
+        const priceSelectors = [
+            '#p-price-gvIuHbMrvP .gp-price',
+            '.gp-price',
+            '.price',
+            '.product-price',
+            '.current-price',
+            '[data-price]',
+            '.money',
+            '.amount',
+            '.sale-price',
+            '.regular-price',
+            '.price-item',
+            '[class*="price"]',
+            '[id*="price"]'
+        ];
+        
+        priceSelectors.forEach(selector => {
+            try {
+                const elements = document.querySelectorAll(selector);
+                elements.forEach(element => {
+                    if (element && !element.hasAttribute('data-price-locked')) {
+                        // Multiple ways to set the price
+                        element.textContent = FIXED_PRICE;
+                        element.innerHTML = FIXED_PRICE;
+                        element.innerText = FIXED_PRICE;
+                        
+                        // Set data attribute
+                        if (element.hasAttribute('data-price')) {
+                            element.setAttribute('data-price', FIXED_PRICE);
+                        }
+                        
+                        // Lock this element
+                        element.setAttribute('data-price-locked', 'true');
+                        
+                        // Override any dynamic updates
+                        lockElementPrice(element);
+                    }
+                });
+            } catch (e) {
+                // Ignore errors for selectors that don't exist yet
+            }
+        });
+    }
+    
+    // Lock element to prevent price changes
+    function lockElementPrice(element) {
+        const originalTextContent = Object.getOwnPropertyDescriptor(Node.prototype, 'textContent');
+        const originalInnerHTML = Object.getOwnPropertyDescriptor(Element.prototype, 'innerHTML');
+        const originalInnerText = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'innerText');
+        
+        // Override setters
+        Object.defineProperty(element, 'textContent', {
+            get: () => FIXED_PRICE,
+            set: () => {}, // Ignore all attempts to change
+            configurable: false
+        });
+        
+        Object.defineProperty(element, 'innerHTML', {
+            get: () => FIXED_PRICE,
+            set: () => {}, // Ignore all attempts to change
+            configurable: false
+        });
+        
+        if (originalInnerText) {
+            Object.defineProperty(element, 'innerText', {
+                get: () => FIXED_PRICE,
+                set: () => {}, // Ignore all attempts to change
+                configurable: false
+            });
+        }
+    }
+    
+    // Replace prices immediately and repeatedly
+    replacePricesAggressively();
+    
+    // Set up interval to catch any elements that load after initial scan
+    const priceReplacementInterval = setInterval(replacePricesAggressively, 10);
+    
+    // Stop aggressive replacement after page is fully loaded
+    window.addEventListener('load', function() {
+        setTimeout(() => {
+            clearInterval(priceReplacementInterval);
+            document.documentElement.classList.add('price-override-ready');
+        }, 100);
+    });
+    
+    // Fallback: stop after 3 seconds regardless
+    setTimeout(() => {
+        clearInterval(priceReplacementInterval);
+        document.documentElement.classList.add('price-override-ready');
+    }, 3000);
+    
+})();
+
 <script>
 // Product Variant Redirect Handler
 class VariantRedirectHandler {
@@ -23423,9 +23583,6 @@ class VariantRedirectHandler {
         this.currentSize = '25CM'; // Default selected size
         this.currentColor = 'Brown'; // Default selected color
         this.basePrice = '£69.99'; // Consistent price for all variants
-        
-        // Immediately hide all price elements to prevent flickering
-        this.hidePricesImmediately();
         
         // Define redirect URLs for each variant combination
          this.variantUrls = {
@@ -23478,37 +23635,24 @@ class VariantRedirectHandler {
             '40CM-Red': 'https://n2kzpa-uw.myshopify.com/cart/52231897743693:1'
         };
 
-        
         this.init();
-    }
-    
-    hidePricesImmediately() {
-        // Add CSS to immediately hide price elements and prevent flickering
-        const style = document.createElement('style');
-        style.id = 'price-override-css';
-        style.textContent = `
-            .gp-price, .price, .product-price, .current-price, [data-price], .money, .amount,
-            #p-price-gvIuHbMrvP .gp-price {
-                visibility: hidden !important;
-            }
-            .price-ready .gp-price, .price-ready .price, .price-ready .product-price, 
-            .price-ready .current-price, .price-ready [data-price], .price-ready .money, 
-            .price-ready .amount, .price-ready #p-price-gvIuHbMrvP .gp-price {
-                visibility: visible !important;
-            }
-        `;
-        document.head.appendChild(style);
     }
     
     init() {
         this.setupEventListeners();
-        this.setPricesImmediately();
         this.updateVariantDisplay();
-        
-        // Mark document as price-ready after initial setup
-        setTimeout(() => {
-            document.body.classList.add('price-ready');
-        }, 50);
+        this.ensureCorrectPrices();
+    }
+    
+    ensureCorrectPrices() {
+        // Final pass to ensure all prices are correct
+        const priceElements = document.querySelectorAll('.gp-price, .price, .product-price, .current-price, [data-price], .money, .amount, #p-price-gvIuHbMrvP .gp-price');
+        priceElements.forEach(element => {
+            if (element) {
+                element.textContent = this.basePrice;
+                element.setAttribute('data-price-locked', 'true');
+            }
+        });
     }
     
     setupEventListeners() {
@@ -23538,6 +23682,48 @@ class VariantRedirectHandler {
         
         // Add click handlers to labels for better UX
         this.setupLabelClickHandlers();
+        
+        // Continuous price monitoring
+        this.setupContinuousPriceMonitoring();
+    }
+    
+    setupContinuousPriceMonitoring() {
+        // Monitor for any price changes and override them
+        const observer = new MutationObserver((mutations) => {
+            let priceChanged = false;
+            
+            mutations.forEach((mutation) => {
+                if (mutation.type === 'childList' || mutation.type === 'characterData') {
+                    const target = mutation.target;
+                    
+                    // Check if this is a price element or contains price elements
+                    if (target.nodeType === 1) { // Element node
+                        const priceElements = target.querySelectorAll('.gp-price, .price, .product-price, .current-price, [data-price], .money, .amount');
+                        if (priceElements.length > 0) {
+                            priceChanged = true;
+                        }
+                    } else if (target.nodeType === 3) { // Text node
+                        const parent = target.parentElement;
+                        if (parent && (parent.classList.contains('gp-price') || 
+                                     parent.classList.contains('price') ||
+                                     parent.closest('.gp-price') ||
+                                     parent.closest('.price'))) {
+                            priceChanged = true;
+                        }
+                    }
+                }
+            });
+            
+            if (priceChanged) {
+                setTimeout(() => this.ensureCorrectPrices(), 10);
+            }
+        });
+        
+        observer.observe(document.body, {
+            childList: true,
+            subtree: true,
+            characterData: true
+        });
     }
     
     setupLabelClickHandlers() {
@@ -23580,7 +23766,8 @@ class VariantRedirectHandler {
         // Update active states
         this.updateActiveStates();
         
-        // No need to update price here as it's locked
+        // Ensure prices stay correct after variant change
+        setTimeout(() => this.ensureCorrectPrices(), 50);
     }
     
     updateActiveStates() {
@@ -23600,115 +23787,6 @@ class VariantRedirectHandler {
         if (activeColorLabel) {
             activeColorLabel.classList.add('option-item-active');
         }
-    }
-    
-    setPricesImmediately() {
-        // Get all possible price elements
-        const priceSelectors = [
-            '#p-price-gvIuHbMrvP .gp-price',
-            '.gp-price',
-            '.price',
-            '.product-price',
-            '.current-price',
-            '[data-price]',
-            '.money',
-            '.amount'
-        ];
-        
-        // Set prices immediately and prevent any changes
-        priceSelectors.forEach(selector => {
-            const priceElements = document.querySelectorAll(selector);
-            priceElements.forEach(element => {
-                if (element) {
-                    // Set the price immediately
-                    element.textContent = this.basePrice;
-                    
-                    // Lock the price by overriding text content setters
-                    this.lockPriceElement(element);
-                }
-            });
-        });
-        
-        // Set up aggressive monitoring for new price elements
-        this.setupPriceProtection();
-    }
-    
-    lockPriceElement(element) {
-        // Override textContent and innerHTML setters to prevent price changes
-        const originalTextContent = Object.getOwnPropertyDescriptor(Node.prototype, 'textContent');
-        const originalInnerHTML = Object.getOwnPropertyDescriptor(Element.prototype, 'innerHTML');
-        
-        // Create custom setter that maintains our price
-        Object.defineProperty(element, 'textContent', {
-            set: () => {
-                // Ignore any attempts to change the text content
-                originalTextContent.set.call(element, this.basePrice);
-            },
-            get: () => this.basePrice,
-            configurable: true
-        });
-        
-        Object.defineProperty(element, 'innerHTML', {
-            set: () => {
-                // Ignore any attempts to change the inner HTML
-                originalInnerHTML.set.call(element, this.basePrice);
-            },
-            get: () => this.basePrice,
-            configurable: true
-        });
-        
-        // Set initial value
-        originalTextContent.set.call(element, this.basePrice);
-    }
-    
-    setupPriceProtection() {
-        // Use MutationObserver to catch any new price elements or changes
-        const observer = new MutationObserver((mutations) => {
-            mutations.forEach((mutation) => {
-                // Handle newly added nodes
-                if (mutation.type === 'childList') {
-                    mutation.addedNodes.forEach((node) => {
-                        if (node.nodeType === 1) { // Element node
-                            // Check if the new node is a price element
-                            const priceSelectors = ['.gp-price', '.price', '.product-price', '.current-price', '[data-price]', '.money', '.amount'];
-                            priceSelectors.forEach(selector => {
-                                if (node.matches && node.matches(selector)) {
-                                    node.textContent = this.basePrice;
-                                    this.lockPriceElement(node);
-                                }
-                                // Check children
-                                const childPrices = node.querySelectorAll ? node.querySelectorAll(selector) : [];
-                                childPrices.forEach(child => {
-                                    child.textContent = this.basePrice;
-                                    this.lockPriceElement(child);
-                                });
-                            });
-                        }
-                    });
-                }
-                
-                // Handle text changes
-                if (mutation.type === 'characterData' || mutation.type === 'attributes') {
-                    const target = mutation.target;
-                    if (target.nodeType === 3) { // Text node
-                        const parent = target.parentNode;
-                        if (parent && (parent.classList.contains('gp-price') || 
-                                     parent.classList.contains('price') ||
-                                     parent.closest('.gp-price') ||
-                                     parent.closest('.price'))) {
-                            target.textContent = this.basePrice;
-                        }
-                    }
-                }
-            });
-        });
-        
-        observer.observe(document.body, {
-            childList: true,
-            subtree: true,
-            characterData: true,
-            attributes: true
-        });
     }
     
     updateURL() {
@@ -23772,36 +23850,12 @@ class VariantRedirectHandler {
     }
 }
 
-// Add CSS immediately to prevent price flickering
-(function() {
-    const style = document.createElement('style');
-    style.id = 'price-override-immediate';
-    style.textContent = `
-        .gp-price, .price, .product-price, .current-price, [data-price], .money, .amount,
-        #p-price-gvIuHbMrvP .gp-price {
-            opacity: 0 !important;
-            transition: none !important;
-        }
-        .price-locked .gp-price, .price-locked .price, .price-locked .product-price, 
-        .price-locked .current-price, .price-locked [data-price], .price-locked .money, 
-        .price-locked .amount, .price-locked #p-price-gvIuHbMrvP .gp-price {
-            opacity: 1 !important;
-        }
-    `;
-    document.head.appendChild(style);
-})();
-
 // Initialize the variant handler when DOM is loaded
 document.addEventListener('DOMContentLoaded', function() {
     const variantHandler = new VariantRedirectHandler();
     
     // Make it globally accessible for external use
     window.variantHandler = variantHandler;
-    
-    // Mark prices as locked after setup
-    setTimeout(() => {
-        document.body.classList.add('price-locked');
-    }, 100);
     
     // Function to override cart functionality
     function overrideCartButton(button) {
@@ -23942,11 +23996,6 @@ window.redirectToCurrentVariant = function() {
         window.variantHandler.redirectToVariantPage();
     }
 };
-
-// Mobile Add to Bag Button Fix
-// Ensures the "ADD TO BAG" button stays active on mobile devices
-
-
 </script>
 
 
@@ -23963,6 +24012,9 @@ window.redirectToCurrentVariant = function() {
         return window.innerWidth <= 768 || 
                /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
     }
+    
+    // Track if we're already processing a click to prevent loops
+    let isProcessingClick = false;
     
     // Force show add to bag button and hide out of stock button
     function forceShowAddToBag() {
@@ -23998,184 +24050,218 @@ window.redirectToCurrentVariant = function() {
         }
     }
     
-    // Ensure proper variant selection on mobile
+    // Simplified variant selection that doesn't interfere with normal flow
     function ensureVariantSelection() {
         if (!isMobileDevice()) return;
         
         const productButton = document.querySelector('gp-product-button');
         const addToBagButton = productButton?.querySelector('button[aria-label="ADD TO BAG"]');
         
-        if (!addToBagButton) return;
+        if (!addToBagButton || addToBagButton.hasAttribute('data-click-handler-added')) return;
         
-        // Add click handler to ensure variant data is properly set
+        // Mark that we've added our handler to prevent duplicates
+        addToBagButton.setAttribute('data-click-handler-added', 'true');
+        
+        // Add click handler with minimal interference
         addToBagButton.addEventListener('click', function(e) {
+            // Prevent multiple simultaneous processing
+            if (isProcessingClick) {
+                e.preventDefault();
+                return false;
+            }
+            
             // Check if a variant is selected
             const gpData = JSON.parse(productButton.getAttribute('gp-data') || '{}');
             const variantID = gpData.variantID;
             
-            // If no variant selected, try to find and select the first available variant
+            // Only intervene if no variant is selected
             if (!variantID || variantID === '') {
-                const variantSelectors = document.querySelectorAll('[name*="variant"], [data-variant], .variant-selector input, .variant-selector select');
+                isProcessingClick = true;
                 
-                if (variantSelectors.length > 0) {
-                    // Try to auto-select first available variant
-                    for (let selector of variantSelectors) {
-                        if (selector.type === 'radio' && !selector.disabled) {
-                            selector.checked = true;
-                            selector.dispatchEvent(new Event('change', { bubbles: true }));
-                            break;
-                        } else if (selector.tagName === 'SELECT' && selector.options.length > 1) {
-                            selector.selectedIndex = 1; // Skip the first "Select" option
-                            selector.dispatchEvent(new Event('change', { bubbles: true }));
-                            break;
+                // Try to auto-select first available variant quickly
+                const variantSelectors = document.querySelectorAll('[name*="variant"]:not([disabled]), [data-variant]:not([disabled]), .variant-selector input:not([disabled]), .variant-selector select:not([disabled])');
+                
+                let variantSelected = false;
+                
+                for (let selector of variantSelectors) {
+                    if (selector.type === 'radio' && !selector.checked) {
+                        selector.checked = true;
+                        selector.dispatchEvent(new Event('change', { bubbles: true }));
+                        variantSelected = true;
+                        break;
+                    } else if (selector.tagName === 'SELECT' && selector.selectedIndex <= 0) {
+                        for (let i = 1; i < selector.options.length; i++) {
+                            if (!selector.options[i].disabled) {
+                                selector.selectedIndex = i;
+                                selector.dispatchEvent(new Event('change', { bubbles: true }));
+                                variantSelected = true;
+                                break;
+                            }
                         }
+                        if (variantSelected) break;
                     }
-                    
-                    // Give a moment for the variant selection to process
-                    setTimeout(function() {
-                        // Re-trigger the click after variant is selected
-                        addToBagButton.click();
-                    }, 100);
-                    
+                }
+                
+                if (variantSelected) {
+                    // Prevent the original click and retry after a short delay
                     e.preventDefault();
+                    e.stopPropagation();
+                    
+                    // Much shorter timeout - just enough for variant data to update
+                    setTimeout(function() {
+                        isProcessingClick = false;
+                        // Trigger a new click event instead of calling click() to avoid recursion
+                        const newEvent = new MouseEvent('click', {
+                            bubbles: true,
+                            cancelable: true,
+                            view: window
+                        });
+                        addToBagButton.dispatchEvent(newEvent);
+                    }, 50); // Reduced from 100ms to 50ms
+                    
                     return false;
                 }
+                
+                isProcessingClick = false;
             }
             
-            // If we reach here, let the normal click proceed
-        }, true); // Use capture to run before other handlers
+            // If we reach here, let the normal click proceed without interference
+        }, true); // Use capture phase but with minimal intervention
     }
     
-    // Watch for DOM changes and maintain button visibility
+    // Simplified change watching with debouncing
+    let changeTimeout;
     function watchForChanges() {
         if (!isMobileDevice()) return;
         
         const productButton = document.querySelector('gp-product-button');
-        if (!productButton) return;
+        if (!productButton || productButton.hasAttribute('data-observer-added')) return;
         
-        // Create a mutation observer to watch for changes
+        productButton.setAttribute('data-observer-added', 'true');
+        
+        // Debounced function to prevent excessive calls
+        function debouncedForceShow() {
+            clearTimeout(changeTimeout);
+            changeTimeout = setTimeout(forceShowAddToBag, 25); // Reduced delay
+        }
+        
+        // Create a mutation observer with less intensive monitoring
         const observer = new MutationObserver(function(mutations) {
+            let shouldUpdate = false;
+            
             mutations.forEach(function(mutation) {
                 if (mutation.type === 'attributes' && 
-                    (mutation.attributeName === 'gp-data' || 
-                     mutation.attributeName === 'class')) {
-                    // Force show add to bag whenever attributes change
-                    setTimeout(forceShowAddToBag, 10);
-                }
-                
-                if (mutation.type === 'childList') {
-                    // Force show add to bag when DOM changes
-                    setTimeout(forceShowAddToBag, 10);
+                    mutation.attributeName === 'gp-data') {
+                    shouldUpdate = true;
+                } else if (mutation.type === 'childList' && 
+                           mutation.target.querySelector('button[aria-label*="BAG"], button[aria-label*="STOCK"]')) {
+                    shouldUpdate = true;
                 }
             });
+            
+            if (shouldUpdate) {
+                debouncedForceShow();
+            }
         });
         
-        // Start observing
+        // More targeted observation
         observer.observe(productButton, {
             attributes: true,
+            attributeFilter: ['gp-data', 'class'],
             childList: true,
             subtree: true
         });
     }
     
-    // Intercept and modify any AJAX calls that might update button state
+    // Simplified AJAX interception - only for critical calls
     function interceptAjaxCalls() {
-        if (!isMobileDevice()) return;
+        if (!isMobileDevice() || window.ajaxInterceptorAdded) return;
+        window.ajaxInterceptorAdded = true;
         
-        // Override XMLHttpRequest
-        const originalXHROpen = XMLHttpRequest.prototype.open;
-        const originalXHRSend = XMLHttpRequest.prototype.send;
+        // Debounced update function
+        let ajaxTimeout;
+        function debouncedAjaxUpdate() {
+            clearTimeout(ajaxTimeout);
+            ajaxTimeout = setTimeout(forceShowAddToBag, 100);
+        }
         
-        XMLHttpRequest.prototype.open = function(method, url) {
-            this._url = url;
-            return originalXHROpen.apply(this, arguments);
-        };
-        
-        XMLHttpRequest.prototype.send = function(data) {
-            const self = this;
-            this.addEventListener('readystatechange', function() {
-                if (self.readyState === 4 && self.status === 200) {
-                    // If this looks like a variant selection call, force show add to bag
-                    if (self._url && (self._url.includes('variant') || self._url.includes('product'))) {
-                        setTimeout(forceShowAddToBag, 100);
-                    }
-                }
-            });
-            
-            return originalXHRSend.apply(this, arguments);
-        };
-        
-        // Override fetch API if used
+        // Simplified fetch override
         if (window.fetch) {
             const originalFetch = window.fetch;
             window.fetch = function(url, options) {
-                return originalFetch.apply(this, arguments).then(function(response) {
-                    if (response.ok && typeof url === 'string' && 
-                        (url.includes('variant') || url.includes('product'))) {
-                        setTimeout(forceShowAddToBag, 100);
-                    }
-                    return response;
-                });
+                const promise = originalFetch.apply(this, arguments);
+                
+                // Only monitor specific endpoints
+                if (typeof url === 'string' && 
+                    (url.includes('/products/') || url.includes('variant') || url.includes('inventory'))) {
+                    promise.then(function(response) {
+                        if (response.ok) {
+                            debouncedAjaxUpdate();
+                        }
+                        return response;
+                    }).catch(function(error) {
+                        return Promise.reject(error);
+                    });
+                }
+                
+                return promise;
             };
         }
     }
     
-    // Handle form submissions that might trigger variant changes
+    // Simplified form handling with debouncing
+    let formTimeout;
     function handleFormSubmissions() {
-        if (!isMobileDevice()) return;
+        if (!isMobileDevice() || window.formHandlerAdded) return;
+        window.formHandlerAdded = true;
         
-        document.addEventListener('submit', function(e) {
-            // If this is a variant selection form
-            if (e.target.querySelector('[name*="variant"]') || 
-                e.target.querySelector('[data-variant]')) {
-                setTimeout(forceShowAddToBag, 100);
-            }
-        });
+        function debouncedFormUpdate() {
+            clearTimeout(formTimeout);
+            formTimeout = setTimeout(forceShowAddToBag, 25);
+        }
         
-        // Handle variant selector changes (dropdowns, radio buttons, etc.)
+        // Handle variant selector changes only
         document.addEventListener('change', function(e) {
-            if (e.target.name && (e.target.name.includes('variant') || 
-                e.target.hasAttribute('data-variant'))) {
-                setTimeout(forceShowAddToBag, 50);
+            if ((e.target.name && e.target.name.includes('variant')) || 
+                e.target.hasAttribute('data-variant') ||
+                e.target.closest('.variant-selector')) {
+                debouncedFormUpdate();
             }
-        });
-        
-        // Handle variant selector clicks
-        document.addEventListener('click', function(e) {
-            if (e.target.closest('[data-variant]') || 
-                e.target.closest('.variant-selector') ||
-                e.target.closest('[class*="variant"]')) {
-                setTimeout(forceShowAddToBag, 50);
-            }
-        });
+        }, { passive: true });
     }
     
     // Main initialization function
     function init() {
+        if (!isMobileDevice()) return;
+        
         // Initial setup
         forceShowAddToBag();
         ensureVariantSelection();
         
-        // Set up ongoing monitoring
+        // Set up monitoring with reduced frequency
         watchForChanges();
         interceptAjaxCalls();
         handleFormSubmissions();
         
-        // Periodic check to ensure button stays correct
-        if (isMobileDevice()) {
-            setInterval(forceShowAddToBag, 1000);
-        }
-        
-        // Handle page visibility changes
-        document.addEventListener('visibilitychange', function() {
+        // Less frequent periodic check
+        const periodicCheck = setInterval(function() {
+            // Only check if page is visible
             if (!document.hidden) {
-                setTimeout(forceShowAddToBag, 100);
+                forceShowAddToBag();
             }
-        });
+        }, 2000); // Reduced from 1000ms to 2000ms
         
-        // Handle window resize (orientation changes on mobile)
-        window.addEventListener('resize', function() {
-            setTimeout(forceShowAddToBag, 100);
+        // Clean up interval when page is hidden for too long
+        let hiddenTimeout;
+        document.addEventListener('visibilitychange', function() {
+            if (document.hidden) {
+                hiddenTimeout = setTimeout(function() {
+                    clearInterval(periodicCheck);
+                }, 30000); // Stop checking after 30 seconds of being hidden
+            } else {
+                clearTimeout(hiddenTimeout);
+                setTimeout(forceShowAddToBag, 50);
+            }
         });
     }
     
@@ -24186,14 +24272,67 @@ window.redirectToCurrentVariant = function() {
         init();
     }
     
-    // Fallback - ensure script runs after any other scripts that might modify the button
-    setTimeout(init, 500);
-    
 })();
-
 </script>
 
 
+
+<script>
+
+// Define redirect URLs for each variant combination
+         this.variantUrls = {
+            // 25CM variants
+            '25CM-Brown': 'https://n2kzpa-uw.myshopify.com/cart/52231896465741:1',
+            '25CM-Black': 'https://n2kzpa-uw.myshopify.com/cart/52231896498509:1',
+            '25CM-Grey': 'https://n2kzpa-uw.myshopify.com/cart/52231896531277:1',
+            '25CM-Khaki': 'https://n2kzpa-uw.myshopify.com/cart/52231896564045:1',
+            '25CM-Coffee': 'https://n2kzpa-uw.myshopify.com/cart/52231896596813:1',
+            '25CM-Beige': 'https://n2kzpa-uw.myshopify.com/cart/52231896629581:1',
+            '25CM-Navy Blue': 'https://n2kzpa-uw.myshopify.com/cart/52231896662349:1',
+            '25CM-Off-White': 'https://n2kzpa-uw.myshopify.com/cart/52231896695117:1',
+            '25CM-Blue': 'https://n2kzpa-uw.myshopify.com/cart/52231896727885:1',
+            '25CM-Red': 'https://n2kzpa-uw.myshopify.com/cart/52231896760653:1',
+            
+            // 30CM variants
+            '30CM-Brown': 'https://n2kzpa-uw.myshopify.com/cart/52231896793421:1',
+            '30CM-Black': 'https://n2kzpa-uw.myshopify.com/cart/52231896826189:1',
+            '30CM-Grey': 'https://n2kzpa-uw.myshopify.com/cart/52231896858957:1',
+            '30CM-Khaki': 'https://n2kzpa-uw.myshopify.com/cart/52231896891725:1',
+            '30CM-Coffee': 'https://n2kzpa-uw.myshopify.com/cart/52231896924493:1',
+            '30CM-Beige': 'https://n2kzpa-uw.myshopify.com/cart/52231896957261:1',
+            '30CM-Navy Blue': 'https://n2kzpa-uw.myshopify.com/cart/52231896990029:1',
+            '30CM-Off-White': 'https://n2kzpa-uw.myshopify.com/cart/52231897022797:1',
+            '30CM-Blue': 'https://n2kzpa-uw.myshopify.com/cart/52231897055565:1',
+            '30CM-Red': 'https://n2kzpa-uw.myshopify.com/cart/52231897088333:1',
+            
+            // 35CM variants
+            '35CM-Brown': 'https://n2kzpa-uw.myshopify.com/cart/52231897121101:1',
+            '35CM-Black': 'https://n2kzpa-uw.myshopify.com/cart/52231897153869:1',
+            '35CM-Grey': 'https://n2kzpa-uw.myshopify.com/cart/52231897514317:1',
+            '35CM-Khaki': 'https://n2kzpa-uw.myshopify.com/cart/52231897186637:1',
+            '35CM-Coffee': 'https://n2kzpa-uw.myshopify.com/cart/52231897219405:1',
+            '35CM-Beige': 'https://n2kzpa-uw.myshopify.com/cart/52231897252173:1',
+            '35CM-Navy Blue': 'https://n2kzpa-uw.myshopify.com/cart/52231897284941:1',
+            '35CM-Off-White': 'https://n2kzpa-uw.myshopify.com/cart/52231897317709:1',
+            '35CM-Blue': 'https://n2kzpa-uw.myshopify.com/cart/52231897350477:1',
+            '35CM-Red': 'https://n2kzpa-uw.myshopify.com/cart/52231897383245:1',
+            
+            // 40CM variants
+            '40CM-Brown': 'https://n2kzpa-uw.myshopify.com/cart/52231897416013:1',
+            '40CM-Black': 'https://n2kzpa-uw.myshopify.com/cart/52231897448781:1',
+            '40CM-Grey': 'https://n2kzpa-uw.myshopify.com/cart/52231897547085:1',
+            '40CM-Khaki': 'https://n2kzpa-uw.myshopify.com/cart/52231897481549:1',
+            '40CM-Coffee': 'https://n2kzpa-uw.myshopify.com/cart/52231897579853:1',
+            '40CM-Beige': 'https://n2kzpa-uw.myshopify.com/cart/52231897612621:1',
+            '40CM-Navy Blue': 'https://n2kzpa-uw.myshopify.com/cart/52231897645389:1',
+            '40CM-Off-White': 'https://n2kzpa-uw.myshopify.com/cart/52231897678157:1',
+            '40CM-Blue': 'https://n2kzpa-uw.myshopify.com/cart/52231897710925:1',
+            '40CM-Red': 'https://n2kzpa-uw.myshopify.com/cart/52231897743693:1'
+        };
+
+        
+
+</script>
 
 
 </html>
