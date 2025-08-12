@@ -23147,7 +23147,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 </div></body>
 
-<!-- <script>
+
 
 
   // Product Variant Redirect Handler
@@ -23419,7 +23419,7 @@ window.redirectToCurrentVariant = function() {
             
        
 
-<script>
+<!-- <script>
 // Product Variant Redirect Handler
 class VariantRedirectHandler {
     constructor() {
@@ -24084,6 +24084,228 @@ window.redirectToCurrentVariant = function() {
 })();
 
 
+</script> -->
+
+<script>
+// Product Variant Redirect Handler
+class VariantRedirectHandler {
+    constructor() {
+        this.currentSize = '25CM'; // Default selected size
+        this.currentColor = 'Brown'; // Default selected color
+        this.basePrice = '£69.99'; // Consistent price for all variants
+        this.priceLocked = false;
+        
+        // Define redirect URLs for each variant combination
+        this.variantUrls = {
+            // ... (same as your original variant URLs) ...
+        };
+
+        this.init();
+    }
+    
+    init() {
+        this.setupEventListeners();
+        this.updateVariantDisplay();
+        this.lockPrices(); // Immediately lock prices
+    }
+    
+    lockPrices() {
+        // Set up mutation observer for prices FIRST
+        const priceObserver = new MutationObserver(() => {
+            if (!this.priceLocked) return;
+            this.ensureCorrectPrices();
+        });
+        
+        // Start observing price containers
+        const priceContainers = [
+            '.product-price-container',
+            '.price-container',
+            '.gp-price',
+            '.price',
+            '.product-price'
+        ];
+        
+        priceContainers.forEach(selector => {
+            const container = document.querySelector(selector);
+            if (container) {
+                priceObserver.observe(container, {
+                    childList: true,
+                    subtree: true,
+                    characterData: true
+                });
+            }
+        });
+        
+        // Initial price lock
+        this.priceLocked = true;
+        this.ensureCorrectPrices();
+    }
+    
+    ensureCorrectPrices() {
+        const priceElements = document.querySelectorAll('.gp-price, .price, .product-price, .current-price, [data-price], .money, .amount, #p-price-gvIuHbMrvP .gp-price');
+        priceElements.forEach(element => {
+            if (element && element.textContent !== this.basePrice) {
+                element.textContent = this.basePrice;
+            }
+        });
+    }
+    
+    setupEventListeners() {
+        // ... (same as your original event listeners) ...
+    }
+    
+    // ... (rest of your original class methods) ...
+}
+
+// Initialize the variant handler when DOM is loaded
+document.addEventListener('DOMContentLoaded', function() {
+    const variantHandler = new VariantRedirectHandler();
+    window.variantHandler = variantHandler;
+    
+    // Enhanced mobile button handling
+    function activateMobileButton() {
+        const isMobile = window.innerWidth <= 768;
+        if (!isMobile) return;
+        
+        const mobileButton = document.querySelector('button[aria-label="ADD TO BAG"], .mobile-add-to-bag');
+        if (!mobileButton) return;
+        
+        // Ensure button is always enabled
+        mobileButton.disabled = false;
+        mobileButton.classList.remove('disabled', 'btn-disabled');
+        
+        // Add direct click handler
+        mobileButton.addEventListener('click', function(e) {
+            e.preventDefault();
+            variantHandler.redirectToVariantPage();
+        }, true);
+    }
+    
+    // Main button override function
+    function overrideCartButton(button) {
+        const newButton = button.cloneNode(true);
+        button.parentNode.replaceChild(newButton, button);
+        
+        newButton.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            variantHandler.redirectToVariantPage();
+        }, true);
+        
+        return newButton;
+    }
+    
+    // Button override logic
+    const addToCartSelectors = [
+        '.add-to-cart-button',
+        '.buy-now-button',
+        '.cart-btn',
+        '.add-to-bag',
+        'button[aria-label="ADD TO BAG"]',
+        '.mobile-add-to-bag'
+    ];
+    
+    // Process buttons immediately
+    addToCartSelectors.forEach(selector => {
+        document.querySelectorAll(selector).forEach(button => {
+            overrideCartButton(button);
+        });
+    });
+    
+    // Mobile-specific activation
+    activateMobileButton();
+    
+    // Mutation observer for new buttons
+    const observer = new MutationObserver(mutations => {
+        mutations.forEach(mutation => {
+            mutation.addedNodes.forEach(node => {
+                // Handle direct button nodes
+                if (node.nodeType === 1 && node.matches(addToCartSelectors.join(','))) {
+                    overrideCartButton(node);
+                }
+                
+                // Handle child elements
+                if (node.querySelectorAll) {
+                    addToCartSelectors.forEach(selector => {
+                        node.querySelectorAll(selector).forEach(button => {
+                            overrideCartButton(button);
+                        });
+                    });
+                }
+            });
+        });
+    });
+    
+    observer.observe(document.body, {childList: true, subtree: true});
+    
+    // Special handling for mobile GP buttons
+    const gpObserver = new MutationObserver(() => {
+        const gpButton = document.querySelector('gp-button button');
+        if (gpButton && !gpButton.hasAttribute('data-handled')) {
+            gpButton.setAttribute('data-handled', 'true');
+            overrideCartButton(gpButton);
+            activateMobileButton();
+        }
+    });
+    
+    gpObserver.observe(document.body, {childList: true, subtree: true});
+});
+
+// Mobile Button Enforcement
+(function() {
+    'use strict';
+    
+    function isMobileDevice() {
+        return window.innerWidth <= 768 || 
+               /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    }
+    
+    function forceMobileButtonActive() {
+        if (!isMobileDevice()) return;
+        
+        const buttons = [
+            ...document.querySelectorAll('button[aria-label="ADD TO BAG"]'),
+            ...document.querySelectorAll('.mobile-add-to-bag')
+        ];
+        
+        buttons.forEach(button => {
+            // Ensure button is visible and enabled
+            button.style.display = 'block';
+            button.style.visibility = 'visible';
+            button.disabled = false;
+            
+            // Remove any disabling classes
+            button.classList.remove(
+                'gp-hidden', 
+                '!gp-hidden', 
+                'disabled',
+                'btn-disabled',
+                'opacity-30',
+                'gp-opacity-30'
+            );
+        });
+    }
+    
+    function initMobile() {
+        if (!isMobileDevice()) return;
+        
+        // Run immediately
+        forceMobileButtonActive();
+        
+        // Run continuously
+        setInterval(forceMobileButtonActive, 300);
+        
+        // Also run on resize/orientation change
+        window.addEventListener('resize', forceMobileButtonActive);
+    }
+    
+    // Initialize mobile features
+    if (document.readyState === 'complete') {
+        initMobile();
+    } else {
+        window.addEventListener('load', initMobile);
+    }
+})();
 </script>
 
 
