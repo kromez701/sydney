@@ -7151,7 +7151,7 @@ jdgm.loadJS(jdgm.CDN_HOST+"loader.js"))}))}(document);
     <script src="https://assets.gemcommerce.com/assets-v2/gp-product-variant-v7-5.js?v=1751022223735" defer="defer"></script>
   
       </div>
-<gp-product-button
+<!-- <gp-product-button
       
       gp-data-wrapper="true"
       gp-href="https://handbag-haven.com/cart"
@@ -7251,7 +7251,7 @@ jdgm.loadJS(jdgm.CDN_HOST+"loader.js"))}))}(document);
     </gp-button>
   
       
-    <!-- <gp-button
+     <gp-button
       gp-data='{}'
       
       class="gp-flex gp-flex-col"
@@ -7313,9 +7313,9 @@ jdgm.loadJS(jdgm.CDN_HOST+"loader.js"))}))}(document);
         </button>
       </div>
       <script src="https://assets.gemcommerce.com/assets-v2/gp-button-v7-5.js?v=1751022223735" defer="defer"></script>
-    </gp-button> -->
+    </gp-button> 
   
-    </gp-product-button>
+    </gp-product-button> -->
     <script src="https://assets.gemcommerce.com/assets-v2/gp-product-button-v7-5.js?v=1751022223735" defer="defer"></script>
   
     
@@ -24070,13 +24070,13 @@ window.redirectToCurrentVariant = function() {
             
             // Always hide ADD TO BAG button on mobile
            
-            outOfStockButton.textContent = "ADD TO BAG"
+            // outOfStockButton.textContent = "ADD TO BAG"
              console.log("ADD TO BAG;",outOfStockButton)
 
             //  console.log("ADD TO BAG;",outOfStockContainer.classList)
             
-            outOfStockContainer.classList.remove('!gp-hidden');
-            outOfStockContainer.style.display = 'block';
+            outOfStockContainer.classList.add('!gp-hidden');
+            outOfStockContainer.style.display = 'none';
             
         //     // Only modify visual state, preserve functionality
         //     addToBagButton.classList.remove('gp-cursor-default', 'gp-opacity-30', 'btn-disabled');
