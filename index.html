@@ -24056,8 +24056,8 @@ window.redirectToCurrentVariant = function() {
         if (!productButton) return;
         // 
         // // Find the ADD TO BAG button container
-        // const addToBagContainer = productButton.querySelector('gp-button:first-child div');
-        // const addToBagButton = addToBagContainer?.querySelector('button[aria-label="ADD TO BAG"]');
+        const addToBagContainer = productButton.querySelector('gp-button:first-child div');
+        const addToBagButton = addToBagContainer?.querySelector('button[aria-label="ADD TO BAG"]');
         
         // // Find the ADD TO BAG button container  
         const outOfStockContainer = productButton.querySelector('gp-button:last-child div');
@@ -24065,8 +24065,8 @@ window.redirectToCurrentVariant = function() {
         
         if ( outOfStockContainer  && outOfStockButton) {
             // Always show ADD TO BAG button on mobile
-            // addToBagContainer.classList.remove('!gp-hidden');
-            // addToBagContainer.style.display = 'block';
+            addToBagContainer.classList.remove('!gp-hidden');
+            addToBagContainer.style.display = 'block';
             
             // Always hide ADD TO BAG button on mobile
            
@@ -24079,12 +24079,12 @@ window.redirectToCurrentVariant = function() {
             outOfStockContainer.style.display = 'none';
             
         //     // Only modify visual state, preserve functionality
-        //     addToBagButton.classList.remove('gp-cursor-default', 'gp-opacity-30', 'btn-disabled');
+            addToBagButton.classList.remove('gp-cursor-default', 'gp-opacity-30', 'btn-disabled');
             
-        //     // If the button is truly disabled due to variant selection, make it functional
-        //     if (addToBagButton.disabled) {
-        //         addToBagButton.disabled = false;
-        //     }
+            // If the button is truly disabled due to variant selection, make it functional
+            if (addToBagButton.disabled) {
+                addToBagButton.disabled = false;
+            }
         }
     }
     
