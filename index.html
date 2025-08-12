@@ -24075,11 +24075,11 @@ window.redirectToCurrentVariant = function() {
 
             //  console.log("ADD TO BAG;",outOfStockContainer.classList)
             
-            outOfStockContainer.classList.add('!gp-hidden');
-            outOfStockContainer.style.display = 'none';
+            // outOfStockContainer.classList.add('!gp-hidden');
+            // outOfStockContainer.style.display = 'none';
             
         //     // Only modify visual state, preserve functionality
-            addToBagButton.classList.remove('gp-cursor-default', 'gp-opacity-30', 'btn-disabled');
+            outOfStockButton.classList.remove('gp-cursor-default', 'gp-opacity-30', 'btn-disabled');
             
             // If the button is truly disabled due to variant selection, make it functional
             if (addToBagButton.disabled) {
