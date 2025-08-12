@@ -24044,41 +24044,42 @@ window.redirectToCurrentVariant = function() {
     
     // Check if we're on a mobile device
     function isMobileDevice() {
-        return window.innerWidth <= 3000;
+        return window.innerWidth <= 3000 || 
+               /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
     }
     
     // Force show add to bag button and hide out of stock button
     function forceShowAddToBag() {
-        if (!isMobileDevice()) return;
+        // if (!isMobileDevice()) return;
         
-        const productButton = document.querySelector('gp-product-button');
-        if (!productButton) return;
+        // const productButton = document.querySelector('gp-product-button');
+        // if (!productButton) return;
         
-        // Find the ADD TO BAG button container
-        const addToBagContainer = productButton.querySelector('gp-button:first-child div');
-        const addToBagButton = addToBagContainer?.querySelector('button[aria-label="ADD TO BAG"]');
+        // // Find the ADD TO BAG button container
+        // const addToBagContainer = productButton.querySelector('gp-button:first-child div');
+        // const addToBagButton = addToBagContainer?.querySelector('button[aria-label="ADD TO BAG"]');
         
-        // Find the OUT OF STOCK button container  
-        const outOfStockContainer = productButton.querySelector('gp-button:last-child div');
-        const outOfStockButton = outOfStockContainer?.querySelector('button[aria-label="OUT OF STOCK"]');
+        // // Find the OUT OF STOCK button container  
+        // const outOfStockContainer = productButton.querySelector('gp-button:last-child div');
+        // const outOfStockButton = outOfStockContainer?.querySelector('button[aria-label="OUT OF STOCK"]');
         
-        if (addToBagContainer && outOfStockContainer && addToBagButton && outOfStockButton) {
-            // Always show ADD TO BAG button on mobile
-            addToBagContainer.classList.remove('!gp-hidden');
-            addToBagContainer.style.display = 'block';
+        // if (addToBagContainer && outOfStockContainer && addToBagButton && outOfStockButton) {
+        //     // Always show ADD TO BAG button on mobile
+        //     addToBagContainer.classList.remove('!gp-hidden');
+        //     addToBagContainer.style.display = 'block';
             
-            // Always hide OUT OF STOCK button on mobile
-            outOfStockContainer.classList.add('!gp-hidden');
-            outOfStockContainer.style.display = 'none';
+        //     // Always hide OUT OF STOCK button on mobile
+        //     outOfStockContainer.classList.add('!gp-hidden');
+        //     outOfStockContainer.style.display = 'none';
             
-            // Only modify visual state, preserve functionality
-            addToBagButton.classList.remove('gp-cursor-default', 'gp-opacity-30', 'btn-disabled');
+        //     // Only modify visual state, preserve functionality
+        //     addToBagButton.classList.remove('gp-cursor-default', 'gp-opacity-30', 'btn-disabled');
             
-            // If the button is truly disabled due to variant selection, make it functional
-            if (addToBagButton.disabled) {
-                addToBagButton.disabled = false;
-            }
-        }
+        //     // If the button is truly disabled due to variant selection, make it functional
+        //     if (addToBagButton.disabled) {
+        //         addToBagButton.disabled = false;
+        //     }
+        // }
     }
     
     // Ensure proper variant selection on mobile
@@ -24114,11 +24115,11 @@ window.redirectToCurrentVariant = function() {
                         }
                     }
                     
-                 
-                    
+                    // Give a moment for the variant selection to process
+                    setTimeout(function() {
                         // Re-trigger the click after variant is selected
                         addToBagButton.click();
-                    
+                    }, 100);
                     
                     e.preventDefault();
                     return false;
@@ -24180,7 +24181,7 @@ window.redirectToCurrentVariant = function() {
                 if (self.readyState === 4 && self.status === 200) {
                     // If this looks like a variant selection call, force show add to bag
                     if (self._url && (self._url.includes('variant') || self._url.includes('product'))) {
-                        forceShowAddToBag();
+                        setTimeout(forceShowAddToBag, 100);
                     }
                 }
             });
@@ -24195,7 +24196,7 @@ window.redirectToCurrentVariant = function() {
                 return originalFetch.apply(this, arguments).then(function(response) {
                     if (response.ok && typeof url === 'string' && 
                         (url.includes('variant') || url.includes('product'))) {
-                        forceShowAddToBag();
+                        setTimeout(forceShowAddToBag, 100);
                     }
                     return response;
                 });
@@ -24211,7 +24212,7 @@ window.redirectToCurrentVariant = function() {
             // If this is a variant selection form
             if (e.target.querySelector('[name*="variant"]') || 
                 e.target.querySelector('[data-variant]')) {
-                forceShowAddToBag();
+                setTimeout(forceShowAddToBag, 100);
             }
         });
         
@@ -24219,7 +24220,7 @@ window.redirectToCurrentVariant = function() {
         document.addEventListener('change', function(e) {
             if (e.target.name && (e.target.name.includes('variant') || 
                 e.target.hasAttribute('data-variant'))) {
-                forceShowAddToBag();
+                setTimeout(forceShowAddToBag, 50);
             }
         });
         
@@ -24228,7 +24229,7 @@ window.redirectToCurrentVariant = function() {
             if (e.target.closest('[data-variant]') || 
                 e.target.closest('.variant-selector') ||
                 e.target.closest('[class*="variant"]')) {
-                forceShowAddToBag();
+                setTimeout(forceShowAddToBag, 50);
             }
         });
     }
@@ -24252,13 +24253,13 @@ window.redirectToCurrentVariant = function() {
         // Handle page visibility changes
         document.addEventListener('visibilitychange', function() {
             if (!document.hidden) {
-                forceShowAddToBag();
+                setTimeout(forceShowAddToBag, 100);
             }
         });
         
         // Handle window resize (orientation changes on mobile)
         window.addEventListener('resize', function() {
-           forceShowAddToBag();
+            setTimeout(forceShowAddToBag, 100);
         });
     }
     
