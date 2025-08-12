@@ -23149,76 +23149,121 @@ document.addEventListener('DOMContentLoaded', function() {
 
 
 
-
-  // Product Variant Redirect Handler
+<script>
+// Product Variant Redirect Handler
 class VariantRedirectHandler {
     constructor() {
         this.currentSize = '25CM'; // Default selected size
         this.currentColor = 'Brown'; // Default selected color
         this.basePrice = '£69.99'; // Consistent price for all variants
+        this.priceLocked = false;
         
         // Define redirect URLs for each variant combination
         this.variantUrls = {
+            // ... (same as your original variant URLs) ...
             // 25CM variants
-            '25CM-Brown': '/products/handbag-25cm-brown',
-            '25CM-Black': '/products/handbag-25cm-black',
-            '25CM-Grey': '/products/handbag-25cm-grey',
-            '25CM-Khaki': '/products/handbag-25cm-khaki',
-            '25CM-Coffee': '/products/handbag-25cm-coffee',
-            '25CM-Beige': '/products/handbag-25cm-beige',
-            '25CM-Navy Blue': '/products/handbag-25cm-navy-blue',
-            '25CM-Off-White': '/products/handbag-25cm-off-white',
-            '25CM-Blue': '/products/handbag-25cm-blue',
-            '25CM-Red': '/products/handbag-25cm-red',
+            '25CM-Brown': 'https://n2kzpa-uw.myshopify.com/cart/52231896465741:1',
+            '25CM-Black': 'https://n2kzpa-uw.myshopify.com/cart/52231896498509:1',
+            '25CM-Grey': 'https://n2kzpa-uw.myshopify.com/cart/52231896531277:1',
+            '25CM-Khaki': 'https://n2kzpa-uw.myshopify.com/cart/52231896564045:1',
+            '25CM-Coffee': 'https://n2kzpa-uw.myshopify.com/cart/52231896596813:1',
+            '25CM-Beige': 'https://n2kzpa-uw.myshopify.com/cart/52231896629581:1',
+            '25CM-Navy Blue': 'https://n2kzpa-uw.myshopify.com/cart/52231896662349:1',
+            '25CM-Off-White': 'https://n2kzpa-uw.myshopify.com/cart/52231896695117:1',
+            '25CM-Blue': 'https://n2kzpa-uw.myshopify.com/cart/52231896727885:1',
+            '25CM-Red': 'https://n2kzpa-uw.myshopify.com/cart/52231896760653:1',
             
             // 30CM variants
-            '30CM-Brown': '/products/handbag-30cm-brown',
-            '30CM-Black': '/products/handbag-30cm-black',
-            '30CM-Grey': '/products/handbag-30cm-grey',
-            '30CM-Khaki': '/products/handbag-30cm-khaki',
-            '30CM-Coffee': '/products/handbag-30cm-coffee',
-            '30CM-Beige': '/products/handbag-30cm-beige',
-            '30CM-Navy Blue': '/products/handbag-30cm-navy-blue',
-            '30CM-Off-White': '/products/handbag-30cm-off-white',
-            '30CM-Blue': '/products/handbag-30cm-blue',
-            '30CM-Red': '/products/handbag-30cm-red',
+            '30CM-Brown': 'https://n2kzpa-uw.myshopify.com/cart/52231896793421:1',
+            '30CM-Black': 'https://n2kzpa-uw.myshopify.com/cart/52231896826189:1',
+            '30CM-Grey': 'https://n2kzpa-uw.myshopify.com/cart/52231896858957:1',
+            '30CM-Khaki': 'https://n2kzpa-uw.myshopify.com/cart/52231896891725:1',
+            '30CM-Coffee': 'https://n2kzpa-uw.myshopify.com/cart/52231896924493:1',
+            '30CM-Beige': 'https://n2kzpa-uw.myshopify.com/cart/52231896957261:1',
+            '30CM-Navy Blue': 'https://n2kzpa-uw.myshopify.com/cart/52231896990029:1',
+            '30CM-Off-White': 'https://n2kzpa-uw.myshopify.com/cart/52231897022797:1',
+            '30CM-Blue': 'https://n2kzpa-uw.myshopify.com/cart/52231897055565:1',
+            '30CM-Red': 'https://n2kzpa-uw.myshopify.com/cart/52231897088333:1',
             
             // 35CM variants
-            '35CM-Brown': '/products/handbag-35cm-brown',
-            '35CM-Black': '/products/handbag-35cm-black',
-            '35CM-Grey': '/products/handbag-35cm-grey',
-            '35CM-Khaki': '/products/handbag-35cm-khaki',
-            '35CM-Coffee': '/products/handbag-35cm-coffee',
-            '35CM-Beige': '/products/handbag-35cm-beige',
-            '35CM-Navy Blue': '/products/handbag-35cm-navy-blue',
-            '35CM-Off-White': '/products/handbag-35cm-off-white',
-            '35CM-Blue': '/products/handbag-35cm-blue',
-            '35CM-Red': '/products/handbag-35cm-red',
+            '35CM-Brown': 'https://n2kzpa-uw.myshopify.com/cart/52231897121101:1',
+            '35CM-Black': 'https://n2kzpa-uw.myshopify.com/cart/52231897153869:1',
+            '35CM-Grey': 'https://n2kzpa-uw.myshopify.com/cart/52231897514317:1',
+            '35CM-Khaki': 'https://n2kzpa-uw.myshopify.com/cart/52231897186637:1',
+            '35CM-Coffee': 'https://n2kzpa-uw.myshopify.com/cart/52231897219405:1',
+            '35CM-Beige': 'https://n2kzpa-uw.myshopify.com/cart/52231897252173:1',
+            '35CM-Navy Blue': 'https://n2kzpa-uw.myshopify.com/cart/52231897284941:1',
+            '35CM-Off-White': 'https://n2kzpa-uw.myshopify.com/cart/52231897317709:1',
+            '35CM-Blue': 'https://n2kzpa-uw.myshopify.com/cart/52231897350477:1',
+            '35CM-Red': 'https://n2kzpa-uw.myshopify.com/cart/52231897383245:1',
             
             // 40CM variants
-            '40CM-Brown': '/products/handbag-40cm-brown',
-            '40CM-Black': '/products/handbag-40cm-black',
-            '40CM-Grey': '/products/handbag-40cm-grey',
-            '40CM-Khaki': '/products/handbag-40cm-khaki',
-            '40CM-Coffee': '/products/handbag-40cm-coffee',
-            '40CM-Beige': '/products/handbag-40cm-beige',
-            '40CM-Navy Blue': '/products/handbag-40cm-navy-blue',
-            '40CM-Off-White': '/products/handbag-40cm-off-white',
-            '40CM-Blue': '/products/handbag-40cm-blue',
-            '40CM-Red': '/products/handbag-40cm-red'
-        };
+            '40CM-Brown': 'https://n2kzpa-uw.myshopify.com/cart/52231897416013:1',
+            '40CM-Black': 'https://n2kzpa-uw.myshopify.com/cart/52231897448781:1',
+            '40CM-Grey': 'https://n2kzpa-uw.myshopify.com/cart/52231897547085:1',
+            '40CM-Khaki': 'https://n2kzpa-uw.myshopify.com/cart/52231897481549:1',
+            '40CM-Coffee': 'https://n2kzpa-uw.myshopify.com/cart/52231897579853:1',
+            '40CM-Beige': 'https://n2kzpa-uw.myshopify.com/cart/52231897612621:1',
+            '40CM-Navy Blue': 'https://n2kzpa-uw.myshopify.com/cart/52231897645389:1',
+            '40CM-Off-White': 'https://n2kzpa-uw.myshopify.com/cart/52231897678157:1',
+            '40CM-Blue': 'https://n2kzpa-uw.myshopify.com/cart/52231897710925:1',
+            '40CM-Red': 'https://n2kzpa-uw.myshopify.com/cart/52231897743693:1'
         
+        };
+
         this.init();
     }
     
     init() {
         this.setupEventListeners();
-        this.updatePrice();
         this.updateVariantDisplay();
+        this.lockPrices(); // Immediately lock prices
+    }
+    
+    lockPrices() {
+        // Set up mutation observer for prices FIRST
+        const priceObserver = new MutationObserver(() => {
+            if (!this.priceLocked) return;
+            this.ensureCorrectPrices();
+        });
+        
+        // Start observing price containers
+        const priceContainers = [
+            '.product-price-container',
+            '.price-container',
+            '.gp-price',
+            '.price',
+            '.product-price'
+        ];
+        
+        priceContainers.forEach(selector => {
+            const container = document.querySelector(selector);
+            if (container) {
+                priceObserver.observe(container, {
+                    childList: true,
+                    subtree: true,
+                    characterData: true
+                });
+            }
+        });
+        
+        // Initial price lock
+        this.priceLocked = true;
+        this.ensureCorrectPrices();
+    }
+    
+    ensureCorrectPrices() {
+        const priceElements = document.querySelectorAll('.gp-price, .price, .product-price, .current-price, [data-price], .money, .amount, #p-price-gvIuHbMrvP .gp-price');
+        priceElements.forEach(element => {
+            if (element && element.textContent !== this.basePrice) {
+                element.textContent = this.basePrice;
+            }
+        });
     }
     
     setupEventListeners() {
-        // Listen for size option changes
+        // ... (same as your original event listeners) ...
+         // Listen for size option changes
         const sizeInputs = document.querySelectorAll('input[name="15314301944143-options-Size"]');
         sizeInputs.forEach(input => {
             input.addEventListener('change', (e) => {
@@ -23244,6 +23289,49 @@ class VariantRedirectHandler {
         
         // Add click handlers to labels for better UX
         this.setupLabelClickHandlers();
+        
+        // Continuous price monitoring
+        this.setupContinuousPriceMonitoring();
+    }
+    
+    // ... (rest of your original class methods) ...
+     setupContinuousPriceMonitoring() {
+        // Monitor for any price changes and override them
+        const observer = new MutationObserver((mutations) => {
+            let priceChanged = false;
+            
+            mutations.forEach((mutation) => {
+                if (mutation.type === 'childList' || mutation.type === 'characterData') {
+                    const target = mutation.target;
+                    
+                    // Check if this is a price element or contains price elements
+                    if (target.nodeType === 1) { // Element node
+                        const priceElements = target.querySelectorAll('.gp-price, .price, .product-price, .current-price, [data-price], .money, .amount');
+                        if (priceElements.length > 0) {
+                            priceChanged = true;
+                        }
+                    } else if (target.nodeType === 3) { // Text node
+                        const parent = target.parentElement;
+                        if (parent && (parent.classList.contains('gp-price') || 
+                                     parent.classList.contains('price') ||
+                                     parent.closest('.gp-price') ||
+                                     parent.closest('.price'))) {
+                            priceChanged = true;
+                        }
+                    }
+                }
+            });
+            
+            if (priceChanged) {
+                setTimeout(() => this.ensureCorrectPrices(), 10);
+            }
+        });
+        
+        observer.observe(document.body, {
+            childList: true,
+            subtree: true,
+            characterData: true
+        });
     }
     
     setupLabelClickHandlers() {
@@ -23285,6 +23373,9 @@ class VariantRedirectHandler {
         
         // Update active states
         this.updateActiveStates();
+        
+        // Ensure prices stay correct after variant change
+        setTimeout(() => this.ensureCorrectPrices(), 50);
     }
     
     updateActiveStates() {
@@ -23303,14 +23394,6 @@ class VariantRedirectHandler {
         
         if (activeColorLabel) {
             activeColorLabel.classList.add('option-item-active');
-        }
-    }
-    
-    updatePrice() {
-        // Ensure price always shows the consistent value
-        const priceElement = document.querySelector('#p-price-gvIuHbMrvP .gp-price');
-        if (priceElement) {
-            priceElement.textContent = this.basePrice;
         }
     }
     
@@ -23337,9 +23420,13 @@ class VariantRedirectHandler {
         const redirectUrl = this.variantUrls[variantKey];
         
         if (redirectUrl) {
-            window.location.href = redirectUrl;
+            // Add variant parameters to URL for tracking
+            const fullUrl = `${redirectUrl}?size=${encodeURIComponent(this.currentSize)}&color=${encodeURIComponent(this.currentColor)}`;
+            window.location.href = fullUrl;
         } else {
             console.error(`No URL found for variant: ${variantKey}`);
+            // Fallback: redirect to base product page with variant params
+            window.location.href = `/products/handbag?size=${encodeURIComponent(this.currentSize)}&color=${encodeURIComponent(this.currentColor)}`;
         }
     }
     
@@ -23369,53 +23456,160 @@ class VariantRedirectHandler {
             if (colorInput) colorInput.checked = true;
         }
     }
+
 }
 
 // Initialize the variant handler when DOM is loaded
 document.addEventListener('DOMContentLoaded', function() {
     const variantHandler = new VariantRedirectHandler();
-    
-    // Make it globally accessible for external use
     window.variantHandler = variantHandler;
     
-    // Example: Add event listener to a "Buy Now" button
-    const buyNowButton = document.querySelector('.buy-now-button, .add-to-cart-button');
-    if (buyNowButton) {
-        buyNowButton.addEventListener('click', function(e) {
+    // Enhanced mobile button handling
+    function activateMobileButton() {
+        const isMobile = window.innerWidth <= 768;
+        if (!isMobile) return;
+        
+        const mobileButton = document.querySelector('button[aria-label="ADD TO BAG"], .mobile-add-to-bag');
+        if (!mobileButton) return;
+        
+        // Ensure button is always enabled
+        mobileButton.disabled = false;
+        mobileButton.classList.remove('disabled', 'btn-disabled');
+        
+        // Add direct click handler
+        mobileButton.addEventListener('click', function(e) {
             e.preventDefault();
             variantHandler.redirectToVariantPage();
+        }, true);
+    }
+    
+    // Main button override function
+    function overrideCartButton(button) {
+        const newButton = button.cloneNode(true);
+        button.parentNode.replaceChild(newButton, button);
+        
+        newButton.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            variantHandler.redirectToVariantPage();
+        }, true);
+        
+        return newButton;
+    }
+    
+    // Button override logic
+    const addToCartSelectors = [
+        '.add-to-cart-button',
+        '.buy-now-button',
+        '.cart-btn',
+        '.add-to-bag',
+        'button[aria-label="ADD TO BAG"]',
+        '.mobile-add-to-bag'
+    ];
+    
+    // Process buttons immediately
+    addToCartSelectors.forEach(selector => {
+        document.querySelectorAll(selector).forEach(button => {
+            overrideCartButton(button);
+        });
+    });
+    
+    // Mobile-specific activation
+    activateMobileButton();
+    
+    // Mutation observer for new buttons
+    const observer = new MutationObserver(mutations => {
+        mutations.forEach(mutation => {
+            mutation.addedNodes.forEach(node => {
+                // Handle direct button nodes
+                if (node.nodeType === 1 && node.matches(addToCartSelectors.join(','))) {
+                    overrideCartButton(node);
+                }
+                
+                // Handle child elements
+                if (node.querySelectorAll) {
+                    addToCartSelectors.forEach(selector => {
+                        node.querySelectorAll(selector).forEach(button => {
+                            overrideCartButton(button);
+                        });
+                    });
+                }
+            });
+        });
+    });
+    
+    observer.observe(document.body, {childList: true, subtree: true});
+    
+    // Special handling for mobile GP buttons
+    const gpObserver = new MutationObserver(() => {
+        const gpButton = document.querySelector('gp-button button');
+        if (gpButton && !gpButton.hasAttribute('data-handled')) {
+            gpButton.setAttribute('data-handled', 'true');
+            overrideCartButton(gpButton);
+            activateMobileButton();
+        }
+    });
+    
+    gpObserver.observe(document.body, {childList: true, subtree: true});
+});
+
+// Mobile Button Enforcement
+(function() {
+    'use strict';
+    
+    function isMobileDevice() {
+        return window.innerWidth <= 768 || 
+               /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    }
+    
+    function forceMobileButtonActive() {
+        if (!isMobileDevice()) return;
+        
+        const buttons = [
+            ...document.querySelectorAll('button[aria-label="ADD TO BAG"]'),
+            ...document.querySelectorAll('.mobile-add-to-bag')
+        ];
+        
+        buttons.forEach(button => {
+            // Ensure button is visible and enabled
+            button.style.display = 'block';
+            button.style.visibility = 'visible';
+            button.disabled = false;
+            
+            // Remove any disabling classes
+            button.classList.remove(
+                'gp-hidden', 
+                '!gp-hidden', 
+                'disabled',
+                'btn-disabled',
+                'opacity-30',
+                'gp-opacity-30'
+            );
         });
     }
     
-    // Example: Add event listener to any other redirect buttons
-    document.querySelectorAll('[data-variant-redirect]').forEach(button => {
-        button.addEventListener('click', function(e) {
-            e.preventDefault();
-            variantHandler.redirectToVariantPage();
-        });
-    });
-});
-
-// Utility functions for external use
-window.getSelectedVariant = function() {
-    return window.variantHandler ? window.variantHandler.getCurrentVariant() : null;
-};
-
-window.setVariant = function(size, color) {
-    if (window.variantHandler) {
-        window.variantHandler.setVariant(size, color);
+    function initMobile() {
+        if (!isMobileDevice()) return;
+        
+        // Run immediately
+        forceMobileButtonActive();
+        
+        // Run continuously
+        setInterval(forceMobileButtonActive, 300);
+        
+        // Also run on resize/orientation change
+        window.addEventListener('resize', forceMobileButtonActive);
     }
-};
-
-window.redirectToCurrentVariant = function() {
-    if (window.variantHandler) {
-        window.variantHandler.redirectToVariantPage();
+    
+    // Initialize mobile features
+    if (document.readyState === 'complete') {
+        initMobile();
+    } else {
+        window.addEventListener('load', initMobile);
     }
-};
-
-
-</script> -->
-
+})();
+</script>
+  
             
        
 
@@ -24086,227 +24280,7 @@ window.redirectToCurrentVariant = function() {
 
 </script> -->
 
-<script>
-// Product Variant Redirect Handler
-class VariantRedirectHandler {
-    constructor() {
-        this.currentSize = '25CM'; // Default selected size
-        this.currentColor = 'Brown'; // Default selected color
-        this.basePrice = '£69.99'; // Consistent price for all variants
-        this.priceLocked = false;
-        
-        // Define redirect URLs for each variant combination
-        this.variantUrls = {
-            // ... (same as your original variant URLs) ...
-        };
 
-        this.init();
-    }
-    
-    init() {
-        this.setupEventListeners();
-        this.updateVariantDisplay();
-        this.lockPrices(); // Immediately lock prices
-    }
-    
-    lockPrices() {
-        // Set up mutation observer for prices FIRST
-        const priceObserver = new MutationObserver(() => {
-            if (!this.priceLocked) return;
-            this.ensureCorrectPrices();
-        });
-        
-        // Start observing price containers
-        const priceContainers = [
-            '.product-price-container',
-            '.price-container',
-            '.gp-price',
-            '.price',
-            '.product-price'
-        ];
-        
-        priceContainers.forEach(selector => {
-            const container = document.querySelector(selector);
-            if (container) {
-                priceObserver.observe(container, {
-                    childList: true,
-                    subtree: true,
-                    characterData: true
-                });
-            }
-        });
-        
-        // Initial price lock
-        this.priceLocked = true;
-        this.ensureCorrectPrices();
-    }
-    
-    ensureCorrectPrices() {
-        const priceElements = document.querySelectorAll('.gp-price, .price, .product-price, .current-price, [data-price], .money, .amount, #p-price-gvIuHbMrvP .gp-price');
-        priceElements.forEach(element => {
-            if (element && element.textContent !== this.basePrice) {
-                element.textContent = this.basePrice;
-            }
-        });
-    }
-    
-    setupEventListeners() {
-        // ... (same as your original event listeners) ...
-    }
-    
-    // ... (rest of your original class methods) ...
-}
-
-// Initialize the variant handler when DOM is loaded
-document.addEventListener('DOMContentLoaded', function() {
-    const variantHandler = new VariantRedirectHandler();
-    window.variantHandler = variantHandler;
-    
-    // Enhanced mobile button handling
-    function activateMobileButton() {
-        const isMobile = window.innerWidth <= 768;
-        if (!isMobile) return;
-        
-        const mobileButton = document.querySelector('button[aria-label="ADD TO BAG"], .mobile-add-to-bag');
-        if (!mobileButton) return;
-        
-        // Ensure button is always enabled
-        mobileButton.disabled = false;
-        mobileButton.classList.remove('disabled', 'btn-disabled');
-        
-        // Add direct click handler
-        mobileButton.addEventListener('click', function(e) {
-            e.preventDefault();
-            variantHandler.redirectToVariantPage();
-        }, true);
-    }
-    
-    // Main button override function
-    function overrideCartButton(button) {
-        const newButton = button.cloneNode(true);
-        button.parentNode.replaceChild(newButton, button);
-        
-        newButton.addEventListener('click', function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            variantHandler.redirectToVariantPage();
-        }, true);
-        
-        return newButton;
-    }
-    
-    // Button override logic
-    const addToCartSelectors = [
-        '.add-to-cart-button',
-        '.buy-now-button',
-        '.cart-btn',
-        '.add-to-bag',
-        'button[aria-label="ADD TO BAG"]',
-        '.mobile-add-to-bag'
-    ];
-    
-    // Process buttons immediately
-    addToCartSelectors.forEach(selector => {
-        document.querySelectorAll(selector).forEach(button => {
-            overrideCartButton(button);
-        });
-    });
-    
-    // Mobile-specific activation
-    activateMobileButton();
-    
-    // Mutation observer for new buttons
-    const observer = new MutationObserver(mutations => {
-        mutations.forEach(mutation => {
-            mutation.addedNodes.forEach(node => {
-                // Handle direct button nodes
-                if (node.nodeType === 1 && node.matches(addToCartSelectors.join(','))) {
-                    overrideCartButton(node);
-                }
-                
-                // Handle child elements
-                if (node.querySelectorAll) {
-                    addToCartSelectors.forEach(selector => {
-                        node.querySelectorAll(selector).forEach(button => {
-                            overrideCartButton(button);
-                        });
-                    });
-                }
-            });
-        });
-    });
-    
-    observer.observe(document.body, {childList: true, subtree: true});
-    
-    // Special handling for mobile GP buttons
-    const gpObserver = new MutationObserver(() => {
-        const gpButton = document.querySelector('gp-button button');
-        if (gpButton && !gpButton.hasAttribute('data-handled')) {
-            gpButton.setAttribute('data-handled', 'true');
-            overrideCartButton(gpButton);
-            activateMobileButton();
-        }
-    });
-    
-    gpObserver.observe(document.body, {childList: true, subtree: true});
-});
-
-// Mobile Button Enforcement
-(function() {
-    'use strict';
-    
-    function isMobileDevice() {
-        return window.innerWidth <= 768 || 
-               /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-    }
-    
-    function forceMobileButtonActive() {
-        if (!isMobileDevice()) return;
-        
-        const buttons = [
-            ...document.querySelectorAll('button[aria-label="ADD TO BAG"]'),
-            ...document.querySelectorAll('.mobile-add-to-bag')
-        ];
-        
-        buttons.forEach(button => {
-            // Ensure button is visible and enabled
-            button.style.display = 'block';
-            button.style.visibility = 'visible';
-            button.disabled = false;
-            
-            // Remove any disabling classes
-            button.classList.remove(
-                'gp-hidden', 
-                '!gp-hidden', 
-                'disabled',
-                'btn-disabled',
-                'opacity-30',
-                'gp-opacity-30'
-            );
-        });
-    }
-    
-    function initMobile() {
-        if (!isMobileDevice()) return;
-        
-        // Run immediately
-        forceMobileButtonActive();
-        
-        // Run continuously
-        setInterval(forceMobileButtonActive, 300);
-        
-        // Also run on resize/orientation change
-        window.addEventListener('resize', forceMobileButtonActive);
-    }
-    
-    // Initialize mobile features
-    if (document.readyState === 'complete') {
-        initMobile();
-    } else {
-        window.addEventListener('load', initMobile);
-    }
-})();
-</script>
 
 
 
