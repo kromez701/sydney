@@ -24065,8 +24065,12 @@ window.redirectToCurrentVariant = function() {
         
         if ( outOfStockContainer  && outOfStockButton) {
             // Always show ADD TO BAG button on mobile
-            addToBagContainer.classList.add('!gp-hidden');
-            addToBagContainer.style.display = 'none';
+            if (outOfStockButton.classList.contains('gp-hidden') || outOfStockButton.style.display =='none') {
+                //outOfStockButton.classList.remove('gp-hidden');
+                addToBagContainer.classList.remove('!gp-hidden');
+            addToBagContainer.style.display = 'block';
+            }
+            
             
             // Always hide ADD TO BAG button on mobile
            
@@ -24074,9 +24078,13 @@ window.redirectToCurrentVariant = function() {
              console.log("ADD TO BAG;",outOfStockButton)
 
             //  console.log("ADD TO BAG;",outOfStockContainer.classList)
-            
-            outOfStockContainer.classList.remove('!gp-hidden');
+            if (addToBagContainer.classList.contains('gp-hidden') || addToBagContainer.style.display =='none') {
+outOfStockContainer.classList.remove('!gp-hidden');
             outOfStockContainer.style.display = 'block';
+            }
+                //addToBagContainer.classList.remove('gp-hidden');  
+            
+            
             
         //     // Only modify visual state, preserve functionality
             outOfStockButton.classList.remove('gp-cursor-default', 'gp-opacity-30', 'btn-disabled');
