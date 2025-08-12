@@ -23804,7 +23804,7 @@ class VariantRedirectHandler {
         this.updateActiveStates();
         
         // Ensure prices stay correct after variant change
-        setTimeout(() => this.ensureCorrectPrices(), 50);
+        this.ensureCorrectPrices(), 50;
     }
     
     updateActiveStates() {
